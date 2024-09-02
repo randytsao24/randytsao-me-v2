@@ -20,7 +20,7 @@ const Header: React.FC = () => {
             Randy Tsao
           </Link>
         </h1>
-        <nav>
+        {/* <nav>
           <ul className="flex space-x-4">
             <li>
               <Link 
@@ -41,7 +41,7 @@ const Header: React.FC = () => {
               </Link>
             </li>
           </ul>
-        </nav>
+        </nav> */}
       </div>
     </header>
   );
