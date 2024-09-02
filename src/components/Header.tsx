@@ -3,8 +3,8 @@ import { Link } from "gatsby";
 
 const Header: React.FC = () => {
   return (
-    <header className="text-gray-800 py-4 px-2 fixed w-full z-10">
-      <div className="px-6 mx-auto flex justify-between items-center">
+    <header className="text-gray-800 py-4 px-8 fixed w-full z-10">
+      <div className="mx-auto flex justify-between items-center">
         <h1 className="text-2xl font-bold font-mono">
           <Link to="/" className="transition duration-300 ease-in-out hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 rounded px-2 py-1">
             Randy Tsao
