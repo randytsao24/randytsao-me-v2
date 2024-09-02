@@ -4,7 +4,7 @@ const About: React.FC = () => {
   return (
     <section>
       <div className="container mx-auto px-4">
-        <div className='m-6 w-4/5 md:w-4/5 sm:w-full mx-auto flex flex-col bg-zinc-50 border-2 border-stone-200 rounded-xl shadow-lg opacity-60 text-black'>
+        <div className='m-6 w-4/5 md:w-1/2 mx-auto flex flex-col bg-zinc-50 border-2 border-stone-200 rounded-xl shadow-lg opacity-60 text-black'>
           <h2 className="p-4 text-3xl font-extrabold underline">Welcome!</h2>
           <p className="p-4 text-lg font-mono">
             Thanks for dropping by my site! I'm a software developer from sunny Southern California, and I'm currently based in Queens. I like web frameworks, dev tools, and obscure code editor themes.
@@ -36,7 +36,7 @@ const About: React.FC = () => {
         <div className='m-6 w-4/5 md:w-1/2 mx-auto flex flex-col bg-zinc-50 border-2 border-stone-200 rounded-xl shadow-lg opacity-60 text-black'>
           <h2 className="p-4 text-3xl font-extrabold underline">More to come...</h2>
           <p className="p-4 text-lg font-mono">
-            I'm currently dabbling in game development (specifically the Godot game engine), and the plan is to host some kind of 2D game on this site, as I've never actually applied my professional skillset to something truly creative. Stay tuned for more.
+            I'm currently dabbling in game development (specifically the Godot game engine), and the plan is to host some kind of 2D game on this site along with some random blogposts about stuff I like, such as music, games, history, or travels.
           </p>
         </div>
       </div>
