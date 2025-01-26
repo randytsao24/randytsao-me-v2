@@ -1,0 +1,23 @@
+backend:
+  name: git-gateway
+  repo: randytsao24/randytsao-me-v2
+  branch: main
+
+# These paths are relative to the static folder
+media_folder: "public/images"
+public_folder: "/images"  # URL path to images
+
+# Enable local backend for development
+local_backend: true
+
+collections:
+  - name: "blog"
+    label: "Blog Posts"
+    folder: "src/content/blog"
+    create: true  # Allow users to create new documents
+    slug: "{{year}}-{{month}}-{{day}}-{{slug}}"  # Filename template
+    fields:
+      - { name: "title", label: "Title", widget: "string" }
+      - { name: "date", label: "Date", widget: "datetime" }
+      - { name: "description", label: "Description", widget: "text", required: false }
+      - { name: "body", label: "Body", widget: "markdown" }
