@@ -20,28 +20,6 @@ const Header: React.FC = () => {
             Randy Tsao
           </Link>
         </h1>
-        <nav className="font-roboto">
-          <ul className="flex space-x-2 sm:space-x-4">
-            <li>
-              <Link 
-                to="/" 
-                className="text-xl sm:text-lg transition duration-300 ease-in-out hover:text-gray-600 hover:bg-gray-200 hover:bg-opacity-70 focus:outline-none focus:ring-2 focus:ring-gray-500 rounded px-2 sm:px-3 py-1 sm:py-2"
-                activeClassName="bg-gray-200 bg-opacity-70"
-              >
-                About
-              </Link>
-            </li>
-            <li>
-              <Link 
-                to="/blog" 
-                className="text-xl sm:text-lg transition duration-300 ease-in-out hover:text-gray-600 hover:bg-gray-200 hover:bg-opacity-70 focus:outline-none focus:ring-2 focus:ring-gray-500 rounded px-2 sm:px-3 py-1 sm:py-2"
-                activeClassName="bg-gray-200 bg-opacity-70"
-              >
-                Blog
-              </Link>
-            </li>
-          </ul>
-        </nav>
       </div>
     </header>
   );
