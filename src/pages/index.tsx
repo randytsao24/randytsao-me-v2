@@ -1,10 +1,10 @@
-import * as React from "react";
+import React, { FC } from "react";
 import type { HeadFC, PageProps } from "gatsby";
 
 import About from "../components/About";
 import MainLayout from "../components/MainLayout";
 
-const IndexPage: React.FC<PageProps> = () => {
+const IndexPage: FC<PageProps> = () => {
   return (
     <div className="flex flex-col min-h-screen">
       <MainLayout>

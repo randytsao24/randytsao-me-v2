@@ -1,13 +1,13 @@
-import React from "react";
+import React, { FC } from "react";
 import { Link } from "gatsby";
 
-const Header: React.FC = () => {
+const Header: FC = () => {
   return (
     <header className="text-gray-800 py-4 px-4 sm:px-8 w-full z-10 bg-transparent absolute top-0 left-0 right-0">
       <div className="mx-auto flex justify-between items-center">
         <h1 className="text-2xl sm:text-2xl font-bold font-mono relative">
-          <Link 
-            to="/" 
+          <Link
+            to="/"
             className="
               transition duration-300 ease-in-out 
               hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 

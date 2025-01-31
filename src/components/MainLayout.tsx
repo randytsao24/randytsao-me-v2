@@ -1,15 +1,15 @@
-import React from 'react';
+import React, { FC, ReactNode } from "react";
 
-import Header from './Header';
+import Header from "./Header";
 
 interface MainLayoutProps {
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
-const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
+const MainLayout: FC<MainLayoutProps> = ({ children }) => {
   return (
     <>
-    <Header />
+      <Header />
       <main className="flex-grow bg-gradient-to-br from-amber-100 via-yellow-50 to-amber-50">
         <div className="container mx-auto px-4 py-16 pt-20">
           <div className="flex flex-col items-center justify-center">
