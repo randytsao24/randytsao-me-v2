@@ -23,6 +23,15 @@ const PostView: FC<PostViewProps> = ({ post }) => {
     );
   }
 
+  // Convert markdown line breaks to HTML paragraphs
+  const formattedContent = post.rawMarkdownBody
+    .split("\n\n")
+    .map((paragraph, index) => (
+      <p key={index} className="mb-6 last:mb-0">
+        {paragraph}
+      </p>
+    ));
+
   return (
     <div className="bg-zinc-50 border-2 border-stone-200 rounded-xl shadow-lg p-6">
       <h1 className="text-3xl font-extrabold mb-2">{post.frontmatter.title}</h1>
@@ -33,10 +42,7 @@ const PostView: FC<PostViewProps> = ({ post }) => {
         <p className="text-lg italic text-gray-700 border-l-4 border-stone-300 pl-4 mb-8">
           {post.frontmatter.description}
         </p>
-        <div
-          className="text-lg font-mono [&>p]:mb-6 last:[&>p]:mb-0"
-          dangerouslySetInnerHTML={{ __html: post.rawMarkdownBody }}
-        />
+        <div className="text-lg font-mono">{formattedContent}</div>
       </div>
     </div>
   );
