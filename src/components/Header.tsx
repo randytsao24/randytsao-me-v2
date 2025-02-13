@@ -20,6 +20,36 @@ const Header: FC = () => {
             Randy Tsao
           </Link>
         </h1>
+        <nav className="flex gap-4 items-center">
+          <Link
+            to="/"
+            className="
+              font-mono text-lg
+              transition duration-300 ease-in-out 
+              hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 
+              rounded px-2 sm:px-3 py-1
+              border-2 border-black
+              shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] sm:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]
+              hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] sm:hover:translate-x-[3px] sm:hover:translate-y-[3px]
+            "
+          >
+            Home
+          </Link>
+          <Link
+            to="/blog"
+            className="
+              font-mono text-lg
+              transition duration-300 ease-in-out 
+              hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 
+              rounded px-2 sm:px-3 py-1
+              border-2 border-black
+              shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] sm:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]
+              hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] sm:hover:translate-x-[3px] sm:hover:translate-y-[3px]
+            "
+          >
+            Blog
+          </Link>
+        </nav>
       </div>
     </header>
   );

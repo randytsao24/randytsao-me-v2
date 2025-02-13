@@ -45,14 +45,14 @@ const BlogPage: FC<PageProps> = () => {
       <MainLayout>
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row gap-6">
-            <div className="md:w-1/3 w-full">
+            <div className="md:w-1/3">
               <PostsList
                 posts={posts}
                 selectedPost={selectedPost}
                 onSelectPost={setSelectedPost}
               />
             </div>
-            <div className="md:w-2/3 w-full">
+            <div className="md:w-2/3">
               <PostView post={selectedPost} />
             </div>
           </div>
