@@ -12,7 +12,7 @@ interface Post {
     date: string;
     description: string;
   };
-  html: string;
+  rawMarkdownBody: string;
 }
 
 const BlogPage: FC<PageProps> = () => {
@@ -22,7 +22,7 @@ const BlogPage: FC<PageProps> = () => {
         edges {
           node {
             id
-            html
+            rawMarkdownBody
             frontmatter {
               title
               date

@@ -7,7 +7,7 @@ interface Post {
     date: string;
     description: string;
   };
-  html: string;
+  rawMarkdownBody: string;
 }
 
 interface PostsListProps {

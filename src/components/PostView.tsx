@@ -7,7 +7,7 @@ interface Post {
     date: string;
     description: string;
   };
-  html: string;
+  rawMarkdownBody: string;
 }
 
 interface PostViewProps {
@@ -35,7 +35,7 @@ const PostView: FC<PostViewProps> = ({ post }) => {
         </p>
         <div
           className="text-lg font-mono [&>p]:mb-6 last:[&>p]:mb-0"
-          dangerouslySetInnerHTML={{ __html: post.html }}
+          dangerouslySetInnerHTML={{ __html: post.rawMarkdownBody }}
         />
       </div>
     </div>
