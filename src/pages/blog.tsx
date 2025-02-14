@@ -44,7 +44,7 @@ const BlogPage: FC<PageProps> = () => {
     <div className="flex flex-col min-h-screen">
       <MainLayout>
         <div className="container mx-auto px-4">
-          <div className="flex flex-col md:flex-row gap-6">
+          <div className="flex flex-col md:flex-row md:gap-6">
             <div className="md:w-1/3">
               <PostsList
                 posts={posts}

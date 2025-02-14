@@ -1,4 +1,4 @@
-import React, { FC } from "react";
+import React, { FC, useMemo } from "react";
 
 interface Post {
   id: string;
@@ -21,6 +21,16 @@ const PostsList: FC<PostsListProps> = ({
   selectedPost,
   onSelectPost,
 }) => {
+  const sortedPosts = useMemo(
+    () =>
+      [...posts].sort(
+        (a, b) =>
+          new Date(b.frontmatter.date).getTime() -
+          new Date(a.frontmatter.date).getTime()
+      ),
+    [posts]
+  );
+
   const truncateTitle = (title: string, maxLength: number = 50) => {
     return title.length > maxLength
       ? `${title.substring(0, maxLength)}...`
@@ -32,12 +42,14 @@ const PostsList: FC<PostsListProps> = ({
       <select
         value={selectedPost?.id || ""}
         onChange={(e) => {
-          const selected = posts.find((post) => post.id === e.target.value);
+          const selected = sortedPosts.find(
+            (post) => post.id === e.target.value
+          );
           if (selected) onSelectPost(selected);
         }}
         className="w-full p-3 bg-zinc-50 border-2 border-stone-200 rounded-xl font-mono text-lg focus:outline-none focus:ring-2 focus:ring-stone-300"
       >
-        {posts.map((post) => (
+        {sortedPosts.map((post) => (
           <option key={post.id} value={post.id}>
             {truncateTitle(post.frontmatter.title)}
           </option>
@@ -47,10 +59,10 @@ const PostsList: FC<PostsListProps> = ({
   );
 
   const DesktopList = () => (
-    <div className="bg-zinc-50 border-2 border-stone-200 rounded-xl shadow-lg p-4 h-[calc(100vh-200px)] overflow-y-auto">
+    <div className="bg-zinc-50 border-2 border-stone-200 rounded-xl shadow-lg p-4 h-[calc(100vh-200px)] overflow-y-auto max-w-xl mx-auto">
       <h2 className="text-2xl font-extrabold mb-4 underline">Posts</h2>
       <div className="space-y-4">
-        {posts.map((post) => (
+        {sortedPosts.map((post) => (
           <div
             key={post.id}
             onClick={() => onSelectPost(post)}

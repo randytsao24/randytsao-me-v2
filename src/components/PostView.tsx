@@ -1,4 +1,6 @@
 import React, { FC } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkBreaks from "remark-breaks";
 
 interface Post {
   id: string;
@@ -17,23 +19,14 @@ interface PostViewProps {
 const PostView: FC<PostViewProps> = ({ post }) => {
   if (!post) {
     return (
-      <div className="bg-zinc-50 border-2 border-stone-200 rounded-xl shadow-lg p-4 sm:p-6 mx-2 sm:mx-0">
+      <div className="bg-zinc-50 border-2 border-stone-200 rounded-xl shadow-lg p-4 sm:p-6 mx-2 sm:mx-0 h-[calc(100vh-200px)] overflow-y-auto">
         <p className="text-lg text-gray-600">Select a post to read</p>
       </div>
     );
   }
 
-  // Convert markdown line breaks to HTML paragraphs
-  const formattedContent = post.rawMarkdownBody
-    .split("\n\n")
-    .map((paragraph, index) => (
-      <p key={index} className="mb-6 last:mb-0">
-        {paragraph}
-      </p>
-    ));
-
   return (
-    <div className="bg-zinc-50 border-2 border-stone-200 rounded-xl shadow-lg p-4 sm:p-6 mx-2 sm:mx-0 w-[calc(100%-1rem)] sm:w-full">
+    <div className="bg-zinc-50 border-2 border-stone-200 rounded-xl shadow-lg p-4 sm:p-6 mx-2 sm:mx-0 w-[calc(100%-1rem)] sm:w-full h-[calc(100vh-200px)] overflow-y-auto">
       <h1 className="text-3xl font-extrabold mb-2">{post.frontmatter.title}</h1>
       <p className="text-gray-600 mb-4">
         {new Date(post.frontmatter.date).toLocaleDateString()}
@@ -42,7 +35,14 @@ const PostView: FC<PostViewProps> = ({ post }) => {
         <p className="text-lg italic text-gray-700 border-l-4 border-stone-300 pl-4 mb-8">
           {post.frontmatter.description}
         </p>
-        <div className="text-lg font-mono">{formattedContent}</div>
+        <div className="text-lg">
+          <ReactMarkdown
+            className="whitespace-pre-wrap"
+            remarkPlugins={[remarkBreaks]}
+          >
+            {post.rawMarkdownBody}
+          </ReactMarkdown>
+        </div>
       </div>
     </div>
   );
