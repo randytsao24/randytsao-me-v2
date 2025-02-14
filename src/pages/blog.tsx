@@ -35,7 +35,7 @@ const BlogPage: FC<PageProps> = () => {
   `);
 
   const [selectedPost, setSelectedPost] = useState<Post | null>(
-    allMarkdownRemark.edges[0]?.node || null
+    allMarkdownRemark.edges[allMarkdownRemark.edges?.length - 1]?.node || null
   );
 
   const posts = allMarkdownRemark.edges.map(({ node }: any) => node);
