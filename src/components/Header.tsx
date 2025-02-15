@@ -6,7 +6,6 @@ const Header: FC = () => {
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const isActive = (path: string) => location.pathname === path;
-  console.log(location.pathname);
 
   const linkStyles = (path: string) => `
     font-mono text-lg
@@ -26,12 +25,12 @@ const Header: FC = () => {
 
   const titleStyles = `
     font-mono
-    transition-all duration-200
     rounded px-2 sm:px-3 py-1 sm:py-2
     border-2 border-black
-    shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]
-    active:shadow-none active:translate-x-[3px] active:translate-y-[3px]
-    hover:bg-black hover:text-white
+    sm:transition-all sm:duration-200
+    sm:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]
+    sm:active:shadow-none sm:active:translate-x-[3px] sm:active:translate-y-[3px]
+    sm:hover:bg-black sm:hover:text-white
     focus:outline-none focus:ring-2 focus:ring-gray-500
   `;
 
