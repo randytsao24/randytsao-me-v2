@@ -38,18 +38,11 @@ const About: FC = () => {
           <p className="p-4 text-lg font-mono">
             I'm currently dabbling in game development (specifically the Godot
             game engine), and the plan is to host some kind of 2D game on this
-            site along with some random blogposts about stuff I like, such as
-            music, games, history, or travels.
+            site. There will also be extremely sporadic blogposts about random
+            tech topics. Stay tuned for more!
           </p>
           <p className="p-4 text-lg font-mono">
-            This site was built in{" "}
-            <span className="text-blue-700 underline">
-              <a href="https://www.cursor.com/">Cursor</a>
-            </span>
-            , a very nifty AI-first code editor which provides a pretty novel
-            way to write code, especially when using Claude 3.5 Sonnet. This
-            site is basically going to be a way for me to get acquainted with
-            the brave new world of AI-driven software development.
+            This site is built with Gatsby and hosted on Netlify.
           </p>
         </div>
       </div>
