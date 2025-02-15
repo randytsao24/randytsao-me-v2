@@ -27,10 +27,10 @@ const Header: FC = () => {
     font-mono
     rounded px-2 sm:px-3 py-1 sm:py-2
     border-2 border-black
+    shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]
     sm:transition-all sm:duration-200
-    sm:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]
-    sm:active:shadow-none sm:active:translate-x-[3px] sm:active:translate-y-[3px]
     sm:hover:bg-black sm:hover:text-white
+    sm:active:shadow-none sm:active:translate-x-[3px] sm:active:translate-y-[3px]
     focus:outline-none focus:ring-2 focus:ring-gray-500
   `;
 
