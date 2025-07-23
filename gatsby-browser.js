@@ -7,7 +7,7 @@ import "@fontsource/roboto-mono/700.css"; // Bold weight
 
 export const onClientEntry = () => {
   if (typeof window !== "undefined") {
-    const supabase = createClient(
+    const supabase = process.env.GATSBY_SUPABASE_DB_URL && createClient(
       process.env.GATSBY_SUPABASE_DB_URL,
       process.env.GATSBY_SUPABASE_ANON_KEY
     );
@@ -15,7 +15,7 @@ export const onClientEntry = () => {
     const handleAnalyticsEvent = async (event) => {
       try {
         const formattedTimestamp = new Date(event.timestamp).toISOString();
-        await supabase.from("analytics_events").insert({
+        await supabase?.from("analytics_events").insert({
           name: event.eventName,
           timestamp: formattedTimestamp,
           path: event.path || null,

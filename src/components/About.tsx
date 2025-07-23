@@ -4,7 +4,7 @@ const About: FC = () => {
   return (
     <section>
       <div className="container mx-auto px-4">
-        <div className="m-6 w-full md:w-4/5 mx-auto flex flex-col bg-zinc-50 border-2 border-stone-200 rounded-xl shadow-lg opacity-66 text-black">
+        <div className="m-6 w-full md:w-4/5 mx-auto flex flex-col bg-white/90 backdrop-blur-sm border-2 border-stone-300 rounded-xl shadow-2xl text-black">
           <h2 className="p-4 text-3xl font-extrabold underline">Welcome!</h2>
           <p className="p-4 text-lg font-mono">
             Thanks for dropping by my site! I'm a software developer from sunny
@@ -31,7 +31,7 @@ const About: FC = () => {
             .
           </p>
         </div>
-        <div className="m-6 w-full md:w-4/5 mx-auto flex flex-col bg-zinc-50 border-2 border-stone-200 rounded-xl shadow-lg opacity-66 text-black">
+        <div className="m-6 w-full md:w-4/5 mx-auto flex flex-col bg-white/90 backdrop-blur-sm border-2 border-stone-300 rounded-xl shadow-2xl text-black">
           <h2 className="p-4 text-3xl font-extrabold underline">
             About the site...
           </h2>
