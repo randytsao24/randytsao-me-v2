@@ -12,16 +12,21 @@ const About: FC = () => {
             <div className="absolute right-0 top-0 w-2 h-full bg-gradient-to-b from-green-300 via-blue-300 to-green-400 opacity-60 rounded-r-xl"></div>
 
             <div className="p-8">
-              <h2 className="text-3xl font-extrabold underline mb-4">Welcome!</h2>
+              <h2 className="text-3xl font-extrabold underline mb-4">
+                Welcome!
+              </h2>
               <p className="text-lg font-mono mb-4">
-                Thanks for dropping by my site! I'm a software developer from sunny
-                Southern California, and I'm currently based in Queens, New York. I
-                like web frameworks, dev tools, and obscure code editor themes.
+                Thanks for dropping by my site! I'm a software developer from
+                sunny Southern California and I'm currently based in Queens, New
+                York. I like web frameworks, dev tools, and obscure code editor
+                themes.
               </p>
               <p className="text-lg font-mono">
                 Reach out to me at{" "}
                 <span className="text-blue-700 underline">
-                  <a href="mailto:randytsao24@gmail.com">randytsao24@gmail.com</a>
+                  <a href="mailto:randytsao24@gmail.com">
+                    randytsao24@gmail.com
+                  </a>
                 </span>
                 , check out my work info at my{" "}
                 <span className="text-blue-700 underline">
@@ -50,16 +55,17 @@ const About: FC = () => {
 
             <div className="p-8">
               <h2 className="text-3xl font-extrabold underline mb-4">
-                About the site...
+                Stuff I'm working on...
               </h2>
               <p className="text-lg font-mono mb-4">
-                I'm currently dabbling in game development (specifically the Godot
-                game engine), and the plan is to host some kind of 2D game on this
-                site. There will also be extremely sporadic blogposts about random
-                tech topics. Stay tuned for more!
+                <span className="text-blue-700 underline">
+                  <a href="https://emteeayy.fly.dev/">emteeayy</a>
+                </span>
+                {" - "}
+                simple NYC subway and bus times
               </p>
               <p className="text-lg font-mono">
-                This site is built with Gatsby and hosted on Netlify.
+                jerb-getter - AI-assisted job posting analysis and retrieval
               </p>
             </div>
           </div>
