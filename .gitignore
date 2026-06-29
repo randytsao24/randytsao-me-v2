@@ -2,3 +2,10 @@ node_modules/
 .cache/
 public
 src/gatsby-types.d.ts
+
+# Custom stuff
+.playwright-mcp/
+plans/
+.vscode/
+.claude/
+images_dev/
