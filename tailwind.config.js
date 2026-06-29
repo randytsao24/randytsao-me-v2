@@ -9,6 +9,32 @@ module.exports = {
       fontFamily: {
         'mono': ['"Roboto Mono"', 'monospace'],
       },
+      colors: {
+        sand: {
+          light: '#D8C8A8',
+          DEFAULT: '#C8B898',
+          dark: '#B0A08A',
+          wet: '#8A8A80',
+        },
+        sea: {
+          light: '#7AADAD',
+          DEFAULT: '#6B9895',
+          dark: '#689090',
+        },
+        cream: {
+          lightest: '#FFFCF6',
+          light: '#FFF9ED',
+          DEFAULT: '#F3EBDD',
+        },
+        teal: {
+          light: '#1A5453',
+          DEFAULT: '#1A5453',
+          dark: '#0F3C3B',
+        },
+        ink: {
+          DEFAULT: '#1E2B2A',
+        },
+      },
       animation: {
         'flash': 'flash 1s ease-in-out infinite',
         'draw-circle': 'draw-circle 2s ease-in-out infinite',

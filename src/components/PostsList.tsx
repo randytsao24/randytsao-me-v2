@@ -47,7 +47,7 @@ const PostsList: FC<PostsListProps> = ({
           );
           if (selected) onSelectPost(selected);
         }}
-        className="w-full p-3 bg-zinc-50 border-2 border-stone-200 rounded-xl font-mono text-lg focus:outline-none focus:ring-2 focus:ring-stone-300"
+        className="w-full p-3 bg-gradient-to-b from-[rgba(255,252,246,0.62)] to-[rgba(243,235,221,0.50)] backdrop-blur-md border border-[rgba(255,252,245,0.55)] rounded-2xl font-mono text-lg text-stone-800 focus:outline-none focus:ring-2 focus:ring-teal/30"
       >
         {sortedPosts.map((post) => (
           <option key={post.id} value={post.id}>
@@ -59,23 +59,23 @@ const PostsList: FC<PostsListProps> = ({
   );
 
   const DesktopList = () => (
-    <div className="bg-zinc-50 border-2 border-stone-200 rounded-xl shadow-lg p-4 h-[calc(100vh-200px)] overflow-y-auto max-w-xl mx-auto">
-      <h2 className="text-2xl font-extrabold mb-4 underline">Posts</h2>
-      <div className="space-y-4">
+    <div className="card-grain bg-gradient-to-b from-[rgba(255,252,246,0.62)] to-[rgba(243,235,221,0.50)] backdrop-blur-md border border-[rgba(255,252,245,0.55)] rounded-2xl shadow-[0_8px_30px_rgba(80,110,110,0.18)] ring-1 ring-[rgba(120,92,60,0.07)] p-6 h-[calc(100vh-200px)] overflow-y-auto max-w-xl mx-auto">
+      <h2 className="inline-block text-2xl font-bold mb-4 pb-1 text-stone-800 border-b-2 border-teal font-mono">Posts</h2>
+      <div className="space-y-3">
         {sortedPosts.map((post) => (
           <div
             key={post.id}
             onClick={() => onSelectPost(post)}
-            className={`cursor-pointer p-4 rounded-lg transition-colors ${
+            className={`cursor-pointer p-4 rounded-xl transition-colors font-mono ${
               selectedPost?.id === post.id
-                ? "bg-blue-100 border-2 border-blue-200"
-                : "hover:bg-gray-100"
+                ? "bg-teal/10 border border-teal/30"
+                : "hover:bg-[rgba(255,252,246,0.5)]"
             }`}
           >
-            <h3 className="font-bold">
+            <h3 className="font-bold text-stone-800">
               {truncateTitle(post.frontmatter.title)}
             </h3>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-stone-500 font-mono">
               {new Date(post.frontmatter.date).toLocaleDateString()}
             </p>
           </div>
