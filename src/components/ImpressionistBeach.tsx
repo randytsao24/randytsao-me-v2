@@ -46,14 +46,15 @@ const CLOUD_Y_MIN = 0.05; // top of cloud band, fraction of H
 const CLOUD_Y_RANGE = 0.25; // vertical spread of cloud band, fraction of H
 
 interface Geom {
-  H: number;
+  W: number; // CSS-pixel canvas width (backing store width / dpr)
+  H: number; // CSS-pixel canvas height (backing store height / dpr)
   horizonY: number; // live sky/sea meeting line (kills the stale-horizonY bug)
   skyBottom: number;
   seaBottom: number; // drawn a few px PAST seamY for an explicit overlap
   seamY: number; // beach top; Phase 2's wash will anchor here
   beachTopFrac: number;
   wetStripBottom: number;
-  beachBottom: number; // LITERAL canvas.height — never a computed fraction
+  beachBottom: number; // LITERAL canvas CSS-pixel height — never a computed fraction
 }
 
 const ImpressionistBeach: FC = () => {
@@ -102,7 +103,7 @@ const ImpressionistBeach: FC = () => {
     // Short viewports: keep the wash shorter/lower AND quieter. Derived once per
     // resize, never per-frame (no innerHeight reads inside the rAF loop).
     const configureWash = () => {
-      const short = canvas.height < 600;
+      const short = canvas.height / dpr < 600;
       washCfg = {
         reachScale: short ? 0.6 : 1.0,
         waterAlpha: short ? 0.7 : 1.0, // master multiplier on the body gradient
@@ -113,22 +114,24 @@ const ImpressionistBeach: FC = () => {
 
     // Derive all band pixels from LIVE dimensions, once per frame. Boundaries are
     // Math.round()'d so adjacent bands share an integer seam (no hairline gaps).
-    // The last band's bottom is the literal canvas.height, which is what
+    // The last band's bottom is the literal CSS-pixel canvas height, which is what
     // structurally prevents the old zero-height warm-sand fill.
     // MUST be defined before resize() which calls it to build the static cache.
     const computeGeom = (): Geom => {
-      const H = canvas.height;
-      const skyBottom = Math.round(SKY_END * H);
-      const seamY = Math.round(SEA_END * H);
+      const cssW = canvas.width / dpr;
+      const cssH = canvas.height / dpr;
+      const skyBottom = Math.round(SKY_END * cssH);
+      const seamY = Math.round(SEA_END * cssH);
       const g: Geom = {
-        H,
+        W: cssW,
+        H: cssH,
         horizonY: skyBottom,
         skyBottom,
         seamY,
         seaBottom: seamY + 4, // explicit overlap: sea draws past beach top
         beachTopFrac: SEA_END,
-        wetStripBottom: Math.round(WET_END * H),
-        beachBottom: canvas.height,
+        wetStripBottom: Math.round(WET_END * cssH),
+        beachBottom: cssH,
       };
 
       // Dev assert: the band-coverage invariant must hold (strictly increasing
@@ -168,9 +171,11 @@ const ImpressionistBeach: FC = () => {
     resize();
     window.addEventListener("resize", resize);
 
+    const cssW = canvas.width / dpr;
+    const cssH = canvas.height / dpr;
     const clouds: Cloud[] = Array.from({ length: 5 }, () => ({
-      x: Math.random() * canvas.width * 1.3 - canvas.width * 0.15,
-      y: (CLOUD_Y_MIN + Math.random() * CLOUD_Y_RANGE) * canvas.height,
+      x: Math.random() * cssW * 1.3 - cssW * 0.15,
+      y: (CLOUD_Y_MIN + Math.random() * CLOUD_Y_RANGE) * cssH,
       width: 80 + Math.random() * 200,
       height: 20 + Math.random() * 50,
       speed: 0.03 + Math.random() * 0.06,
@@ -186,7 +191,7 @@ const ImpressionistBeach: FC = () => {
     ];
 
     const drawSky = () => {
-      const horizonY = geom.horizonY;
+      const { W, horizonY } = geom;
       const grad = ctx.createLinearGradient(0, 0, 0, horizonY + 30);
       grad.addColorStop(0, "#87CEEB");
       grad.addColorStop(0.25, "#98D4D9");
@@ -194,21 +199,22 @@ const ImpressionistBeach: FC = () => {
       grad.addColorStop(0.75, "#9BC7C5");
       grad.addColorStop(1, "#8BB5B4");
       ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, canvas.width, horizonY + 30);
+      ctx.fillRect(0, 0, W, horizonY + 30);
     };
 
     const drawSunGlow = () => {
-      const sunX = canvas.width * 0.65;
-      const sunY = geom.horizonY - 20;
+      const { W, H, horizonY } = geom;
+      const sunX = W * 0.65;
+      const sunY = horizonY - 20;
 
-      const grad = ctx.createRadialGradient(sunX, sunY, 0, sunX, sunY, canvas.height * 0.6);
+      const grad = ctx.createRadialGradient(sunX, sunY, 0, sunX, sunY, H * 0.6);
       grad.addColorStop(0, "rgba(255, 245, 220, 0.25)");
       grad.addColorStop(0.1, "rgba(255, 240, 210, 0.15)");
       grad.addColorStop(0.3, "rgba(255, 230, 190, 0.06)");
       grad.addColorStop(0.6, "rgba(220, 220, 200, 0.02)");
       grad.addColorStop(1, "rgba(200, 200, 180, 0)");
       ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillRect(0, 0, W, H);
 
       ctx.save();
       ctx.shadowBlur = 60;
@@ -246,8 +252,9 @@ const ImpressionistBeach: FC = () => {
     };
 
     const drawSea = (time: number) => {
-      const seaTop = geom.skyBottom; // flush with sky bottom — no gap
-      const seaBottom = geom.seaBottom; // a few px past beach top (explicit overlap)
+      const { W, skyBottom, seaBottom } = geom;
+      const seaTop = skyBottom; // flush with sky bottom — no gap
+      // const seaBottom = seaBottom; // a few px past beach top (explicit overlap)
 
       ctx.save();
       ctx.shadowBlur = 0;
@@ -258,13 +265,13 @@ const ImpressionistBeach: FC = () => {
       seaGrad.addColorStop(0.6, "#6B9895");
       seaGrad.addColorStop(1, "#689090");
       ctx.fillStyle = seaGrad;
-      ctx.fillRect(0, seaTop, canvas.width, seaBottom - seaTop);
+      ctx.fillRect(0, seaTop, W, seaBottom - seaTop);
 
       waves.forEach((w, i) => {
         ctx.strokeStyle = `rgba(170, 210, 210, ${0.08 + i * 0.02})`;
         ctx.lineWidth = 1;
         ctx.beginPath();
-        for (let x = 0; x <= canvas.width; x += 4) {
+        for (let x = 0; x <= W; x += 4) {
           const y = seaTop + 10 + i * 18 + Math.sin(x * w.frequency + time * w.speed + w.phase) * w.amplitude;
           if (x === 0) ctx.moveTo(x, y);
           else ctx.lineTo(x, y);
@@ -278,7 +285,7 @@ const ImpressionistBeach: FC = () => {
         ctx.lineWidth = 15;
         ctx.lineCap = "round";
         ctx.beginPath();
-        for (let x = 0; x <= canvas.width; x += 6) {
+        for (let x = 0; x <= W; x += 6) {
           const y = seaTop + 30 + i * 25 + Math.sin(x * w.frequency + time * w.speed + w.phase) * w.amplitude * 1.5;
           if (x === 0) ctx.moveTo(x, y);
           else ctx.lineTo(x, y);
@@ -290,7 +297,8 @@ const ImpressionistBeach: FC = () => {
     };
 
     const drawFoamLine = (time: number) => {
-      const foamY = geom.horizonY + 8;
+      const { W, horizonY } = geom;
+      const foamY = horizonY + 8;
 
       ctx.save();
       ctx.shadowBlur = 20;
@@ -300,7 +308,7 @@ const ImpressionistBeach: FC = () => {
       ctx.lineWidth = 4;
       ctx.lineCap = "round";
       ctx.beginPath();
-      for (let x = 0; x <= canvas.width; x += 3) {
+      for (let x = 0; x <= W; x += 3) {
         const y = foamY + Math.sin(x * 0.006 + time * 0.0005) * 3 + Math.sin(x * 0.015 + time * 0.0007) * 1.5;
         if (x === 0) ctx.moveTo(x, y);
         else ctx.lineTo(x, y);
@@ -310,7 +318,7 @@ const ImpressionistBeach: FC = () => {
       ctx.strokeStyle = "rgba(240, 250, 250, 0.08)";
       ctx.lineWidth = 12;
       ctx.beginPath();
-      for (let x = 0; x <= canvas.width; x += 6) {
+      for (let x = 0; x <= W; x += 6) {
         const y = foamY + 2 + Math.sin(x * 0.005 + time * 0.0004 + 1) * 2.5 + Math.sin(x * 0.013 + time * 0.0006 + 2) * 1;
         if (x === 0) ctx.moveTo(x, y);
         else ctx.lineTo(x, y);
@@ -321,7 +329,7 @@ const ImpressionistBeach: FC = () => {
     };
 
     const drawBeach = (time: number) => {
-      const { seamY, wetStripBottom, beachBottom, H } = geom;
+      const { W, H, seamY, wetStripBottom, beachBottom } = geom;
 
       // THIN wet strip at the seam (~3% of H). Cooler/darker tone as the wet
       // transition off the sea — a sliver, NOT the dominant beach color.
@@ -329,7 +337,7 @@ const ImpressionistBeach: FC = () => {
       wetSand.addColorStop(0, "#9E9688");
       wetSand.addColorStop(1, "#B0A08A");
       ctx.fillStyle = wetSand;
-      ctx.fillRect(0, seamY, canvas.width, wetStripBottom - seamY);
+      ctx.fillRect(0, seamY, W, wetStripBottom - seamY);
 
       // WARM dry sand fills the ENTIRE rest down to the literal canvas bottom.
       // This is the band that was previously zero-height; it is now the bulk of
@@ -340,7 +348,7 @@ const ImpressionistBeach: FC = () => {
       drySand.addColorStop(0.7, "#D4C4A4");
       drySand.addColorStop(1, "#D8C8A8");
       ctx.fillStyle = drySand;
-      ctx.fillRect(0, wetStripBottom, canvas.width, beachBottom - wetStripBottom);
+      ctx.fillRect(0, wetStripBottom, W, beachBottom - wetStripBottom);
 
       ctx.save();
       ctx.shadowBlur = 6;
@@ -353,7 +361,7 @@ const ImpressionistBeach: FC = () => {
         ctx.strokeStyle = `rgba(180, 170, 155, ${alpha})`;
         ctx.lineWidth = 1.5;
         ctx.beginPath();
-        for (let x = 0; x <= canvas.width; x += 6) {
+        for (let x = 0; x <= W; x += 6) {
           const wy = y + Math.sin(x * 0.012 + time * 0.0004 + i) * 2 + Math.cos(x * 0.008 + time * 0.0003 + i) * 1.5;
           if (x === 0) ctx.moveTo(x, wy);
           else ctx.lineTo(x, wy);
@@ -391,8 +399,7 @@ const ImpressionistBeach: FC = () => {
       if (!animated) return; // resting frame = plain beach (no wash)
 
       const t = time / 1000; // seconds
-      const { seamY, H } = geom;
-      const W = canvas.width;
+      const { W, H, seamY } = geom;
       const cols = lastWet.length;
       const maxReachAbs = 0.06 * H; // hard clamp: leading edge never passes 0.86H
       const coverThresh = 0.004 * H; // below this depth a column doesn't count as wet
@@ -458,7 +465,13 @@ const ImpressionistBeach: FC = () => {
         const reach = age < WASH_FADE_SECONDS ? wetReach[col] : 0;
         ctx.lineTo(col * WASH_STEP, seamY + Math.max(0, reach));
       }
-      ctx.lineTo((cols - 1) * WASH_STEP, seamY);
+      // Extend to full width so the right edge has no gap
+      const lastReach = (() => {
+        const age = t - lastWet[cols - 1];
+        return age < WASH_FADE_SECONDS ? wetReach[cols - 1] : 0;
+      })();
+      ctx.lineTo(W, seamY + Math.max(0, lastReach));
+      ctx.lineTo(W, seamY);
       ctx.closePath();
       ctx.fill();
 
@@ -479,7 +492,8 @@ const ImpressionistBeach: FC = () => {
       for (let col = 0; col < cols; col++) {
         ctx.lineTo(col * WASH_STEP, seamY + washEdge[col]); // wavy leading edge L->R
       }
-      ctx.lineTo((cols - 1) * WASH_STEP, seamY); // up to the top-right
+      ctx.lineTo(W, seamY + washEdge[cols - 1]); // extend to full width
+      ctx.lineTo(W, seamY); // up to the top-right corner
       ctx.closePath(); // back along the flat waterline to (0, seamY)
       ctx.fill();
 
@@ -496,6 +510,7 @@ const ImpressionistBeach: FC = () => {
       for (let col = 1; col < cols; col++) {
         ctx.lineTo(col * WASH_STEP, seamY + washEdge[col]);
       }
+      ctx.lineTo(W, seamY + washEdge[cols - 1]); // extend to full width
       ctx.stroke();
 
       ctx.restore();
@@ -521,11 +536,13 @@ const ImpressionistBeach: FC = () => {
     const renderStatic = () => render(performance.now(), false);
 
     const update = () => {
+      const cssW = canvas.width / dpr;
+      const cssH = canvas.height / dpr;
       for (const c of clouds) {
         c.x += c.speed;
-        if (c.x > canvas.width + c.width) {
+        if (c.x > cssW + c.width) {
           c.x = -c.width;
-          c.y = (CLOUD_Y_MIN + Math.random() * CLOUD_Y_RANGE) * canvas.height;
+          c.y = (CLOUD_Y_MIN + Math.random() * CLOUD_Y_RANGE) * cssH;
         }
       }
     };
