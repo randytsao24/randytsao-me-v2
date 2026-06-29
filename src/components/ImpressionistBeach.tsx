@@ -10,7 +10,6 @@ interface Cloud {
 }
 
 interface Wave {
-  xOffset: number;
   amplitude: number;
   frequency: number;
   speed: number;
@@ -48,11 +47,11 @@ const ImpressionistBeach: FC = () => {
     }));
 
     const waves: Wave[] = [
-      { xOffset: 0, amplitude: 4, frequency: 0.008, speed: 0.0006, phase: 0 },
-      { xOffset: 0, amplitude: 3, frequency: 0.012, speed: 0.0008, phase: 1.5 },
-      { xOffset: 0, amplitude: 2.5, frequency: 0.015, speed: 0.001, phase: 3 },
-      { xOffset: 0, amplitude: 1.5, frequency: 0.02, speed: 0.0012, phase: 4.5 },
-      { xOffset: 0, amplitude: 6, frequency: 0.005, speed: 0.0004, phase: 0.8 },
+      { amplitude: 4, frequency: 0.008, speed: 0.0006, phase: 0 },
+      { amplitude: 3, frequency: 0.012, speed: 0.0008, phase: 1.5 },
+      { amplitude: 2.5, frequency: 0.015, speed: 0.001, phase: 3 },
+      { amplitude: 1.5, frequency: 0.02, speed: 0.0012, phase: 4.5 },
+      { amplitude: 6, frequency: 0.005, speed: 0.0004, phase: 0.8 },
     ];
 
     const drawSky = () => {
@@ -188,56 +187,47 @@ const ImpressionistBeach: FC = () => {
       ctx.restore();
     };
 
-    const drawShore = (time: number) => {
-      const shoreTop = horizonY + canvas.height * 0.22;
+    const drawBeach = (time: number) => {
+      const beachTop = horizonY + canvas.height * 0.22;
 
-      const shoreGrad = ctx.createLinearGradient(0, shoreTop, 0, canvas.height);
-      shoreGrad.addColorStop(0, "#8BB8A8");
-      shoreGrad.addColorStop(0.2, "#92B8A5");
-      shoreGrad.addColorStop(0.5, "#A0BEAC");
-      shoreGrad.addColorStop(0.8, "#A8C0B0");
-      shoreGrad.addColorStop(1, "#A5BDA8");
-      ctx.fillStyle = shoreGrad;
-      ctx.fillRect(0, shoreTop, canvas.width, canvas.height - shoreTop);
+      const wetSand = ctx.createLinearGradient(0, beachTop, 0, beachTop + canvas.height * 0.08);
+      wetSand.addColorStop(0, "#8A8A80");
+      wetSand.addColorStop(0.5, "#9E9688");
+      wetSand.addColorStop(1, "#B0A08A");
+      ctx.fillStyle = wetSand;
+      ctx.fillRect(0, beachTop, canvas.width, canvas.height * 0.08);
+
+      const dampSand = ctx.createLinearGradient(0, beachTop + canvas.height * 0.08, 0, beachTop + canvas.height * 0.2);
+      dampSand.addColorStop(0, "#B0A08A");
+      dampSand.addColorStop(0.5, "#C0B090");
+      dampSand.addColorStop(1, "#C8B898");
+      ctx.fillStyle = dampSand;
+      ctx.fillRect(0, beachTop + canvas.height * 0.08, canvas.width, canvas.height * 0.12);
+
+      const drySand = ctx.createLinearGradient(0, beachTop + canvas.height * 0.2, 0, canvas.height);
+      drySand.addColorStop(0, "#C8B898");
+      drySand.addColorStop(0.3, "#D0C0A0");
+      drySand.addColorStop(0.7, "#D4C4A4");
+      drySand.addColorStop(1, "#D8C8A8");
+      ctx.fillStyle = drySand;
+      ctx.fillRect(0, beachTop + canvas.height * 0.2, canvas.width, canvas.height - beachTop - canvas.height * 0.2);
 
       ctx.save();
-      ctx.shadowBlur = 8;
-      for (let i = 0; i < 3; i++) {
-        ctx.strokeStyle = `rgba(180, 210, 200, ${0.1 - i * 0.025})`;
-        ctx.lineWidth = 2;
+      ctx.shadowBlur = 6;
+      for (let i = 0; i < 4; i++) {
+        const alpha = 0.08 - i * 0.015;
+        if (alpha <= 0) continue;
+        const y = beachTop + canvas.height * 0.02 + i * canvas.height * 0.03;
+        ctx.strokeStyle = `rgba(180, 170, 155, ${alpha})`;
+        ctx.lineWidth = 1.5;
         ctx.beginPath();
         for (let x = 0; x <= canvas.width; x += 6) {
-          const y = shoreTop + 10 + i * 20 + Math.sin(x * 0.01 + time * 0.0005 + i) * 3 + Math.cos(x * 0.007 + time * 0.0003 + i) * 2;
-          if (x === 0) ctx.moveTo(x, y);
-          else ctx.lineTo(x, y);
+          const wy = y + Math.sin(x * 0.012 + time * 0.0004 + i) * 2 + Math.cos(x * 0.008 + time * 0.0003 + i) * 1.5;
+          if (x === 0) ctx.moveTo(x, wy);
+          else ctx.lineTo(x, wy);
         }
         ctx.stroke();
       }
-      ctx.restore();
-    };
-
-    const drawSand = (time: number) => {
-      const sandTop = canvas.height * 0.88;
-      const sandGrad = ctx.createLinearGradient(0, sandTop - 20, 0, canvas.height);
-      sandGrad.addColorStop(0, "rgba(180, 170, 150, 0)");
-      sandGrad.addColorStop(0.3, "rgba(180, 165, 140, 0.15)");
-      sandGrad.addColorStop(0.6, "rgba(175, 160, 135, 0.25)");
-      sandGrad.addColorStop(1, "rgba(170, 155, 130, 0.3)");
-      ctx.fillStyle = sandGrad;
-      ctx.fillRect(0, sandTop - 20, canvas.width, canvas.height - sandTop + 20);
-
-      ctx.save();
-      ctx.shadowBlur = 15;
-      ctx.shadowColor = "rgba(0, 0, 0, 0.04)";
-      ctx.strokeStyle = "rgba(190, 180, 160, 0.08)";
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      for (let x = 0; x <= canvas.width; x += 8) {
-        const y = sandTop + Math.sin(x * 0.02 + time * 0.0002) * 2 + Math.sin(x * 0.04 + time * 0.0001) * 1;
-        if (x === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-      }
-      ctx.stroke();
       ctx.restore();
     };
 
@@ -251,8 +241,7 @@ const ImpressionistBeach: FC = () => {
       drawSunGlow();
       drawSea(time);
       drawFoamLine(time);
-      drawShore(time);
-      drawSand(time);
+      drawBeach(time);
     };
 
     const update = () => {
