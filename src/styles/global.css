@@ -1,3 +1,17 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Faint SVG-noise grain overlay for cards.
+   Painted via ::before so it sits above the card fill but below the
+   card's text content (which carries `relative z-10`). pointer-events:none
+   keeps links/selection working. Kept whisper-faint at 4% opacity. */
+.card-grain::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 1rem; /* matches rounded-2xl */
+  pointer-events: none;
+  opacity: 0.04;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='cardGrain'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23cardGrain)'/%3E%3C/svg%3E");
+}
