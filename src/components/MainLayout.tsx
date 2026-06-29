@@ -1,6 +1,7 @@
 import React, { FC, ReactNode } from "react";
 
 import Header from "./Header";
+import ImpressionistBeach from "./ImpressionistBeach";
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -10,7 +11,8 @@ const MainLayout: FC<MainLayoutProps> = ({ children }) => {
   return (
     <>
       <Header />
-      <main className="flex-grow bg-gradient-to-br from-amber-200 via-orange-200/80 via-amber-100/50 to-yellow-100 animate-gradient bg-[length:200%_200%] relative">
+      <ImpressionistBeach />
+      <main className="flex-grow relative">
         <div className="container mx-auto px-4 py-16 pt-20">
           <div className="flex flex-col items-center justify-center">
             {children}
