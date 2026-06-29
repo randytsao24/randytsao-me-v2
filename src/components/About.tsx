@@ -4,15 +4,11 @@ const About: FC = () => {
   return (
     <section>
       <div className="container mx-auto px-4">
-        <div className="m-6 w-full md:w-4/5 mx-auto relative opacity-80">
-          <div className="bg-white/90 backdrop-blur-sm border-2 border-stone-300 rounded-xl shadow-2xl text-black relative">
-            <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-300 via-green-300 to-blue-400 opacity-60 rounded-t-xl"></div>
-            <div className="absolute bottom-0 left-0 w-full h-2 bg-gradient-to-r from-green-300 via-blue-300 to-green-400 opacity-60 rounded-b-xl"></div>
-            <div className="absolute left-0 top-0 w-2 h-full bg-gradient-to-b from-blue-300 via-green-300 to-blue-400 opacity-60 rounded-l-xl"></div>
-            <div className="absolute right-0 top-0 w-2 h-full bg-gradient-to-b from-green-300 via-blue-300 to-green-400 opacity-60 rounded-r-xl"></div>
-
-            <div className="p-8">
-              <h2 className="text-3xl font-extrabold underline mb-4">
+        <div className="m-6 w-full md:w-4/5 mx-auto relative">
+          <div className="card-grain bg-gradient-to-b from-[rgba(255,252,246,0.62)] to-[rgba(243,235,221,0.50)] backdrop-blur-md border border-[rgba(255,252,245,0.55)] rounded-2xl shadow-[0_8px_30px_rgba(80,110,110,0.18)] ring-1 ring-[rgba(120,92,60,0.07)] text-stone-800 relative transition-[transform,box-shadow] duration-300 hover:-translate-y-0.5 hover:shadow-[0_14px_40px_rgba(80,110,110,0.24)]">
+            {/* relative z-10 lifts text above the .card-grain ::before overlay */}
+            <div className="p-8 relative z-10">
+              <h2 className="inline-block text-3xl font-bold mb-4 pb-1 text-stone-800 border-b-2 border-[#1A5453]">
                 Welcome!
               </h2>
               <p className="text-lg font-mono mb-4">
@@ -23,21 +19,21 @@ const About: FC = () => {
               </p>
               <p className="text-lg font-mono">
                 Reach out to me at{" "}
-                <span className="text-blue-700 underline">
+                <span className="text-[#1A5453] hover:text-[#0F3C3B] underline">
                   <a href="mailto:randytsao24@gmail.com">
                     randytsao24@gmail.com
                   </a>
                 </span>
                 , check out my work info at my{" "}
-                <span className="text-blue-700 underline">
+                <span className="text-[#1A5453] hover:text-[#0F3C3B] underline">
                   <a href="https://www.linkedin.com/in/randy-tsao/">LinkedIn</a>
                 </span>
                 , or see some really outdated repos at my{" "}
-                <span className="text-blue-700 underline">
+                <span className="text-[#1A5453] hover:text-[#0F3C3B] underline">
                   <a href="https://github.com/randytsao24">GitHub</a>
                 </span>
                 . I currently work at{" "}
-                <span className="text-blue-700 underline">
+                <span className="text-[#1A5453] hover:text-[#0F3C3B] underline">
                   <a href="https://www.ventera.com/">Ventera</a>
                 </span>
                 .
@@ -46,19 +42,15 @@ const About: FC = () => {
           </div>
         </div>
 
-        <div className="m-6 w-full md:w-4/5 mx-auto relative opacity-80">
-          <div className="bg-white/90 backdrop-blur-sm border-2 border-stone-300 rounded-xl shadow-2xl text-black relative">
-            <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-green-400 via-blue-400 to-green-500 opacity-60 rounded-t-xl"></div>
-            <div className="absolute bottom-0 left-0 w-full h-2 bg-gradient-to-r from-blue-400 via-green-400 to-blue-500 opacity-60 rounded-b-xl"></div>
-            <div className="absolute left-0 top-0 w-2 h-full bg-gradient-to-b from-green-400 via-blue-400 to-green-500 opacity-60 rounded-l-xl"></div>
-            <div className="absolute right-0 top-0 w-2 h-full bg-gradient-to-b from-blue-400 via-green-400 to-blue-500 opacity-60 rounded-r-xl"></div>
-
-            <div className="p-8">
-              <h2 className="text-3xl font-extrabold underline mb-4">
+        <div className="m-6 w-full md:w-4/5 mx-auto relative">
+          <div className="card-grain bg-gradient-to-b from-[rgba(255,252,246,0.62)] to-[rgba(243,235,221,0.50)] backdrop-blur-md border border-[rgba(255,252,245,0.55)] rounded-2xl shadow-[0_8px_30px_rgba(80,110,110,0.18)] ring-1 ring-[rgba(120,92,60,0.07)] text-stone-800 relative transition-[transform,box-shadow] duration-300 hover:-translate-y-0.5 hover:shadow-[0_14px_40px_rgba(80,110,110,0.24)]">
+            {/* relative z-10 lifts text above the .card-grain ::before overlay */}
+            <div className="p-8 relative z-10">
+              <h2 className="inline-block text-3xl font-bold mb-4 pb-1 text-stone-800 border-b-2 border-[#1A5453]">
                 Stuff I'm working on...
               </h2>
               <p className="text-lg font-mono mb-4">
-                <span className="text-blue-700 underline">
+                <span className="text-[#1A5453] hover:text-[#0F3C3B] underline">
                   <a href="https://emteeayy.fly.dev/">emteeayy</a>
                 </span>
                 {" - "}
