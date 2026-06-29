@@ -16,11 +16,7 @@ exports.onCreateWebpackConfig = ({ actions }) => {
             fullySpecified: false,
           },
         },
-        {
-          test: /\.js$/,
-          include: /node_modules\/@react-three/,
-          type: "javascript/auto",
-        },
+        
       ],
     },
   });
