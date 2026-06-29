@@ -16,7 +16,9 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@fontsource/inter": "^5.2.8",
     "@fontsource/roboto-mono": "^5.0.19",
+    "@fontsource/source-serif-4": "^5.2.9",
     "@supabase/supabase-js": "^2.49.1",
     "autoprefixer": "^10.4.20",
     "decap-cms-app": "^3.5.0",
