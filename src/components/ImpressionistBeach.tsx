@@ -17,19 +17,11 @@ interface Wave {
 }
 
 // ---- Phase 2: shoreline "lapping wash" ----
-// A "tongue" is one sheet of water that slides down onto the sand and recedes.
-// 2–3 of these overlap across the width at incommensurate periods/centers so the
-// shoreline arrives UNEVENLY along its length (never a rigid horizontal bar).
-interface Tongue {
-  centerFrac: number; // horizontal center, fraction of width
-  widthFrac: number; // gaussian sigma across x, fraction of width
-  period: number; // seconds per lap (8–14s+, slow)
-  phase: number; // cycle offset, fraction of a period (0..1)
-  reachFrac: number; // base max reach BELOW seam, fraction of H (each <= 0.06)
-}
-
-// Per-viewport-height config, derived in configureWash() (resize-time, not per
-// frame). Short viewports keep the wash shorter/lower and quieter.
+// A single continuous water sheet spans the full width. The leading edge is
+// shaped by multiple superimposed spatial sine waves at incommensurate
+// frequencies — each also drifts slowly over time — so the shoreline arrives
+// unevenly along its length without ever breaking into disconnected blobs.
+// One global easeReach cycle drives the overall advance/recede rhythm.
 interface WashCfg {
   reachScale: number; // multiplies every tongue's reach
   waterAlpha: number; // translucent sheet alpha
@@ -97,12 +89,6 @@ const ImpressionistBeach: FC = () => {
     // waterAlpha is now a MASTER multiplier (0..1) on the water-body gradient,
     // not a flat fill alpha — the body has volume via its own vertical gradient.
     let washCfg: WashCfg = { reachScale: 1, waterAlpha: 1.0, dampPeak: 0.26, foamPeak: 0.38 };
-
-    const tongues: Tongue[] = [
-      { centerFrac: 0.24, widthFrac: 0.22, period: 10.5, phase: 0.0, reachFrac: 0.055 },
-      { centerFrac: 0.6, widthFrac: 0.28, period: 13.7, phase: 0.37, reachFrac: 0.05 },
-      { centerFrac: 0.85, widthFrac: 0.18, period: 21.0, phase: 0.72, reachFrac: 0.045 },
-    ];
 
     const allocWashBuffers = () => {
       const logicalW = Math.round(canvas.width / dpr);
@@ -382,12 +368,19 @@ const ImpressionistBeach: FC = () => {
     // (last 65%). Returns 0..1 (fraction of the tongue's max reach). NOT a raw
     // sin() — that would read as a mechanical pulse.
     const easeReach = (p: number): number => {
+      let raw: number;
       if (p < 0.35) {
         const x = p / 0.35;
-        return 1 - Math.pow(1 - x, 3); // easeOutCubic: fast arrival
+        raw = 1 - Math.pow(1 - x, 3); // easeOutCubic: 0→1
+      } else {
+        const x = (p - 0.35) / 0.65;
+        raw = 1 - Math.pow(x, 3); // easeInCubic: 1→0
       }
-      const x = (p - 0.35) / 0.65;
-      return 1 - Math.pow(x, 3); // 1 -> 0, slow at the start (water lingers, then drains)
+      // Floor at 0.025: the water never fully drains. Without this, all three
+      // tongues can hit 0 simultaneously when their incommensurate cycles
+      // align — the water body vanishes for a frame, then reappears as the
+      // fastest tongue rises, creating a jarring left-to-right "wipe" effect.
+      return 0.025 + raw * 0.975;
     };
 
     // The lapping wash. ONE save/restore, explicit source-over (NOT "lighter" —
@@ -395,17 +388,20 @@ const ImpressionistBeach: FC = () => {
     // Strictly confined to seamY .. seamY + 0.06*H (≈0.80–0.86H); never climbs
     // above the seam, never near the content cards (which bottom out ~0.65H).
     const drawShoreWash = (time: number, animated: boolean) => {
-      if (!animated) return; // resting frame = plain beach (no tongues, no tint)
+      if (!animated) return; // resting frame = plain beach (no wash)
 
-      const t = time / 1000; // seconds, off the SAME rAF clock as every other draw
+      const t = time / 1000; // seconds
       const { seamY, H } = geom;
       const W = canvas.width;
       const cols = lastWet.length;
       const maxReachAbs = 0.06 * H; // hard clamp: leading edge never passes 0.86H
       const coverThresh = 0.004 * H; // below this depth a column doesn't count as wet
 
-      // Never-repeating reach: sum of incommensurate low-freq sines, mapped to
-      // [0.6, 1.0] so some laps reach further than others.
+      // One global advance/recede cycle (~11s). The water sheet rises and falls
+      // as a single unit — no more distinct blobs breaking apart.
+      const globalCycle = easeReach((t / 11.3) % 1);
+
+      // Slow tide-like modulation so some laps reach further than others.
       const reachMod =
         0.8 +
         0.2 *
@@ -413,26 +409,34 @@ const ImpressionistBeach: FC = () => {
             0.35 * Math.sin((t / 29.1) * TWO_PI + 1.3) +
             0.25 * Math.sin((t / 41.7) * TWO_PI + 2.7));
 
-      // Each tongue's eased reach position this frame (one value per tongue).
-      const pos = tongues.map((tg) => easeReach(((t / tg.period) + tg.phase) % 1));
+      const baseReach = 0.05 * H * globalCycle * reachMod * washCfg.reachScale;
 
-      // O(width) pass 1: leading edge per column + damp-memory bookkeeping.
+      // Spatial undulation: 4 superimposed sine waves across x, each drifting
+      // at its own slow temporal rate. This creates an organic, never-repeating
+      // shoreline shape without ever breaking into disconnected segments.
+      const spatialVar = (x: number): number => {
+        const xf = x / W; // 0..1 across the width
+        return (
+          0.35 * Math.sin(xf * 3.7 * TWO_PI + t * 0.12) +
+          0.25 * Math.sin(xf * 5.3 * TWO_PI + t * 0.08 + 1.7) +
+          0.22 * Math.sin(xf * 7.1 * TWO_PI + t * 0.15 + 3.1) +
+          0.18 * Math.sin(xf * 2.3 * TWO_PI + t * 0.06 + 5.4)
+        );
+      };
+
+      // O(width) pass: leading edge per column + damp-memory bookkeeping.
       for (let col = 0; col < cols; col++) {
         const x = col * WASH_STEP;
-        let depth = 0; // px below seam, = max over the overlapping tongues at this x
-        for (let i = 0; i < tongues.length; i++) {
-          const tg = tongues[i];
-          const dx = (x - tg.centerFrac * W) / (tg.widthFrac * W);
-          const gauss = Math.exp(-0.5 * dx * dx); // gaussian falloff across the width
-          const d = tg.reachFrac * H * pos[i] * reachMod * gauss * washCfg.reachScale;
-          if (d > depth) depth = d;
-        }
+        // Spatial variation ranges roughly [-0.7, 0.7] after summing 4 sines.
+        // Map to [0.3, 1.0] so the water always reaches at least 30% of base
+        // reach — never fully drains at any column.
+        const sv = spatialVar(x);
+        const spatialFactor = 0.3 + 0.7 * ((sv + 1.0) / 2.0); // 0.3..1.0
+        let depth = baseReach * spatialFactor;
         if (depth > maxReachAbs) depth = maxReachAbs;
         washEdge[col] = depth;
 
         if (depth > coverThresh) {
-          // New episode (was fully dry) resets remembered reach; otherwise grow it
-          // so the damp band records the FURTHEST the water came this lap.
           if (t - lastWet[col] > WASH_FADE_SECONDS) wetReach[col] = depth;
           else if (depth > wetReach[col]) wetReach[col] = depth;
           lastWet[col] = t;
@@ -442,39 +446,19 @@ const ImpressionistBeach: FC = () => {
       ctx.save();
       ctx.globalCompositeOperation = "source-over"; // explicit: never "lighter"
 
-      // 1. Damp-sand memory — where the water RECENTLY reached and is now drying.
-      // Drawn as a single filled path (not per-column rects) to avoid grid-line
-      // artifacts from adjacent rects with slightly different alphas overlapping.
-      // Uniform alpha: the visual drying comes from the shrinking reach over time,
-      // not from per-column alpha variation.
-      // Rendered in two passes: first a sharp-edged fill for the body, then a
-      // feathered shadow pass so the top edge at the waterline stays crisp.
+      // 1. Damp-sand memory — single filled path, always continuous. Where
+      // wetReach is 0 the path sits at seamY (zero-height fill there), so the
+      // shape naturally tapers off at the drying edges.
       const dampAlpha = washCfg.dampPeak;
-      ctx.shadowBlur = 0;
-      ctx.shadowColor = "transparent";
       ctx.fillStyle = `rgba(120, 92, 58, ${dampAlpha.toFixed(3)})`;
       ctx.beginPath();
       ctx.moveTo(0, seamY);
-      let inRun = false;
       for (let col = 0; col < cols; col++) {
         const age = t - lastWet[col];
-        if (age < WASH_FADE_SECONDS && wetReach[col] > 0) {
-          const x = col * WASH_STEP;
-          if (!inRun) {
-            ctx.lineTo(x, seamY); // top edge along the seam
-            inRun = true;
-          }
-          ctx.lineTo(x, seamY + wetReach[col]); // wavy bottom follows the reach
-        } else if (inRun) {
-          // Close this run: go up to seamY at the last wet column
-          const x = (col - 1) * WASH_STEP;
-          ctx.lineTo(x, seamY);
-          inRun = false;
-        }
+        const reach = age < WASH_FADE_SECONDS ? wetReach[col] : 0;
+        ctx.lineTo(col * WASH_STEP, seamY + Math.max(0, reach));
       }
-      if (inRun) {
-        ctx.lineTo((cols - 1) * WASH_STEP, seamY);
-      }
+      ctx.lineTo((cols - 1) * WASH_STEP, seamY);
       ctx.closePath();
       ctx.fill();
 
@@ -499,32 +483,18 @@ const ImpressionistBeach: FC = () => {
       ctx.closePath(); // back along the flat waterline to (0, seamY)
       ctx.fill();
 
-      // 3. Foam lip — a soft warm off-white line riding the leading edge (the
-      // wave's crest), feathered. Continuous along each wet run, broken where the
-      // wash falls back to nothing between tongues. No pure white.
+      // 3. Foam lip — a soft warm off-white line riding the leading edge,
+      // continuous across the full width since the water sheet never breaks.
       ctx.shadowBlur = 12;
       ctx.shadowColor = "rgba(242, 239, 230, 0.3)";
       ctx.strokeStyle = `rgba(242, 239, 230, ${washCfg.foamPeak.toFixed(3)})`;
-      ctx.lineWidth = 3.5;
+      ctx.lineWidth = 2.5;
       ctx.lineCap = "round";
       ctx.lineJoin = "round";
-      const foamMin = 0.012 * H; // tongue must have arrived this far to grow foam
       ctx.beginPath();
-      let penDown = false;
-      for (let col = 0; col < cols; col++) {
-        const depth = washEdge[col];
-        if (depth > foamMin) {
-          const px = col * WASH_STEP;
-          const py = seamY + depth;
-          if (!penDown) {
-            ctx.moveTo(px, py);
-            penDown = true;
-          } else {
-            ctx.lineTo(px, py);
-          }
-        } else {
-          penDown = false; // break the lip where the water has pulled back
-        }
+      ctx.moveTo(0, seamY + washEdge[0]);
+      for (let col = 1; col < cols; col++) {
+        ctx.lineTo(col * WASH_STEP, seamY + washEdge[col]);
       }
       ctx.stroke();
 
