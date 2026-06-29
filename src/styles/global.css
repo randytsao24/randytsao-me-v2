@@ -2,6 +2,24 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Static CSS gradient fallback — shows before the canvas hydrates and if
+   JavaScript fails. Approximates the beach scene: sky → sea → sand. */
+html {
+  background: linear-gradient(
+    180deg,
+    #87CEEB 0%,
+    #98D4D9 15%,
+    #A3DBD8 30%,
+    #9BC7C5 45%,
+    #8BB5B4 60%,
+    #7AADAD 70%,
+    #6B9895 80%,
+    #C8B898 85%,
+    #D8C8A8 100%
+  );
+  min-height: 100vh;
+}
+
 /* Faint SVG-noise grain overlay for cards.
    Painted via ::before so it sits above the card fill but below the
    card's text content (which carries `relative z-10`). pointer-events:none
