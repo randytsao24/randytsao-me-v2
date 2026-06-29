@@ -12,6 +12,7 @@ module.exports = {
       animation: {
         'flash': 'flash 1s ease-in-out infinite',
         'draw-circle': 'draw-circle 2s ease-in-out infinite',
+        'gradient': 'gradient 8s ease-in-out infinite',
       },
       keyframes: {
         flash: {
@@ -21,7 +22,11 @@ module.exports = {
         'draw-circle': {
           '0%': { strokeDasharray: '0 69', strokeDashoffset: '0' },
           '100%': { strokeDasharray: '69 69', strokeDashoffset: '0' },
-        }
+        },
+        gradient: {
+          '0%, 100%': { backgroundPosition: '0% 50%' },
+          '50%': { backgroundPosition: '100% 50%' },
+        },
       }
     },
   },
