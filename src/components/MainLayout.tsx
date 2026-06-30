@@ -1,22 +1,51 @@
-import React, { FC, ReactNode, useEffect } from "react";
+import React, { FC, ReactNode, useEffect, useMemo } from "react";
 import Header from "./Header";
 import ImpressionistBeach from "./ImpressionistBeach";
-import { useTimeOfDayPalette, cardTokensForHour, getLocalHour } from "../lib/palette";
+import PaletteSelector, { usePalettePin, pinnedHour, PalettePin } from "./PaletteSelector";
+import {
+  useTimeOfDayPalette,
+  cardTokensForHour,
+  getLocalHour,
+  DAY_PALETTE,
+  DAWN_PALETTE,
+  GOLDEN_HOUR_PALETTE,
+  NOCTURNE_PALETTE,
+  DUSK_MID_PALETTE,
+} from "../lib/palette";
+import type { Palette } from "../lib/palette";
+
+/** Map a PalettePin to the static palette for that state. */
+function pinnedPalette(pin: PalettePin): Palette {
+  switch (pin) {
+    case "dawn": return DAWN_PALETTE;
+    case "day": return DAY_PALETTE;
+    case "golden": return GOLDEN_HOUR_PALETTE;
+    case "dusk": return DUSK_MID_PALETTE;
+    case "nocturne": return NOCTURNE_PALETTE;
+    default: return DAY_PALETTE;
+  }
+}
 
 interface MainLayoutProps {
   children: ReactNode;
 }
 
 const MainLayout: FC<MainLayoutProps> = ({ children }) => {
-  const palette = useTimeOfDayPalette();
+  const clockPalette = useTimeOfDayPalette();
+  const [pinned, setPinned] = usePalettePin();
 
-  // Drive CSS custom properties on <html> so Header (a sibling of <main>)
-  // can inherit them. Uses a ref-less approach — direct style.setProperty on
-  // documentElement, decoupled from the React render cycle.
+  // When pinned, use the static palette. When auto, use the clock-driven one.
+  const palette = useMemo(
+    () => (pinned === "auto" ? clockPalette : pinnedPalette(pinned)),
+    [pinned, clockPalette],
+  );
+
+  // CSS custom properties: update every 500ms in auto mode, or set once when pinned.
   useEffect(() => {
     const applyTokens = () => {
       const el = document.documentElement;
-      const tokens = cardTokensForHour(getLocalHour());
+      const hour = pinned === "auto" ? getLocalHour() : pinnedHour(pinned);
+      const tokens = cardTokensForHour(hour);
       el.style.setProperty("--card-bg-start", tokens.bgStart);
       el.style.setProperty("--card-bg-end", tokens.bgEnd);
       el.style.setProperty("--card-border", tokens.border);
@@ -29,10 +58,15 @@ const MainLayout: FC<MainLayoutProps> = ({ children }) => {
       el.style.setProperty("--header-shadow", tokens.headerShadow);
       el.style.setProperty("--grain-opacity", tokens.grainOpacity.toFixed(2));
     };
+
     applyTokens();
-    const id = setInterval(applyTokens, 500);
-    return () => clearInterval(id);
-  }, []);
+
+    if (pinned === "auto") {
+      const id = setInterval(applyTokens, 500);
+      return () => clearInterval(id);
+    }
+    // When pinned, no interval needed — tokens are static.
+  }, [pinned]);
 
   return (
     <>
@@ -45,6 +79,7 @@ const MainLayout: FC<MainLayoutProps> = ({ children }) => {
           </div>
         </div>
       </main>
+      <PaletteSelector pinned={pinned} onPin={setPinned} />
     </>
   );
 };
