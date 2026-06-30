@@ -188,7 +188,7 @@ const PaletteSelector: FC<PaletteSelectorProps> = ({ pinned, onPin }) => {
                 {/* Label */}
                 <span
                   className="font-mono leading-none select-none"
-                  style={{ fontSize: 10, letterSpacing: "0.02em" }}
+                  style={{ fontSize: 10, letterSpacing: "0.02em", color: "var(--text-color)" }}
                 >
                   {pill.label}
                 </span>

@@ -217,14 +217,44 @@ const ImpressionistBeach: FC<ImpressionistBeachProps> = ({
 
     const cssW = canvas.width / dpr;
     const cssH = canvas.height / dpr;
-    const clouds: Cloud[] = Array.from({ length: 5 }, () => ({
-      x: Math.random() * cssW * 1.3 - cssW * 0.15,
-      y: (CLOUD_Y_MIN + Math.random() * CLOUD_Y_RANGE) * cssH,
-      width: 80 + Math.random() * 200,
-      height: 20 + Math.random() * 50,
-      speed: 0.03 + Math.random() * 0.06,
-      opacity: 0.15 + Math.random() * 0.2,
-    }));
+    const SLOT_COUNT = 8;
+    const X_START = -0.15;
+    const X_SPAN = 1.30;
+    const SLOT_W = X_SPAN / SLOT_COUNT; // 0.1625
+    const JITTER = 0.06;
+
+    // Tier assignment: 5 upper, 3 lower, shuffled so vertical spread is guaranteed
+    const tierAssign = [0, 0, 0, 0, 0, 1, 1, 1].sort(() => Math.random() - 0.5);
+    const cloudTiers = [
+      { min: 0.05, range: 0.125 },
+      { min: 0.175, range: 0.125 },
+    ];
+
+    const clouds: Cloud[] = Array.from({ length: SLOT_COUNT }, (_, i) => {
+      const isEdge = i === 0 || i === SLOT_COUNT - 1;
+
+      // Edge slots biased toward off-screen so there's always a cloud entering/exiting
+      const jitterBias = i === 0 ? -0.4 : i === SLOT_COUNT - 1 ? 0.4 : 0;
+      const x = (X_START + (i + 0.5) * SLOT_W + (Math.random() - 0.5 + jitterBias) * 2 * JITTER) * cssW;
+
+      const tier = cloudTiers[tierAssign[i]];
+      const y = (tier.min + Math.random() * tier.range) * cssH;
+
+      // Edge clouds lean smaller — mimics atmospheric recession
+      const sizeScale = isEdge ? 0.6 : 1.0;
+      const width  = (80 + Math.random() * 200) * sizeScale;
+      const height = (20 + Math.random() * 50) * sizeScale;
+
+      // Edge clouds softer opacity for same reason
+      const baseOpacity = isEdge ? 0.12 : 0.18;
+      const opacity = baseOpacity + Math.random() * 0.17;
+
+      return {
+        x, y, width, height,
+        speed: 0.03 + Math.random() * 0.06,
+        opacity,
+      };
+    }).sort(() => Math.random() - 0.5); // shuffle to break slot order in the recycle loop
 
     // Stars: 25 faint stippled dots in the upper sky, only visible at night.
     // Reuses the cloud-array thinking — generated once, drawn per-frame.
