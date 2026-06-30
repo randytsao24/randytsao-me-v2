@@ -1,4 +1,4 @@
-import React, { FC, useState, useCallback, useEffect } from "react";
+import React, { FC, useState, useCallback, useEffect, useRef } from "react";
 
 // ---- Types ----
 
@@ -13,9 +13,9 @@ export type PalettePin =
 
 interface PillCfg {
   pin: PalettePin;
-  label: string; // 2-5 chars, font-mono 10px
-  dotColor: string; // CSS color for the 8px mood dot
-  pinnedHour: number; // hour to feed cardTokensForHour() when pinned
+  label: string;
+  dotColor: string;
+  pinnedHour: number;
 }
 
 const STORAGE_KEY = "randytsao-palette-pin";
@@ -23,179 +23,212 @@ const STORAGE_KEY = "randytsao-palette-pin";
 // ---- Pill definitions ----
 
 const PILLS: PillCfg[] = [
-  {
-    pin: "auto",
-    label: "Auto",
-    dotColor: "var(--text-color)",
-    pinnedHour: -1, // sentinel — means "don't pin, use clock"
-  },
-  {
-    pin: "dawn",
-    label: "Dawn",
-    dotColor: "#C9B8C4", // pale rose-lavender (dawn skyTop)
-    pinnedHour: 6,
-  },
-  {
-    pin: "day",
-    label: "Day",
-    dotColor: "#87CEEB", // warm cream-blue (day skyTop)
-    pinnedHour: 12,
-  },
-  {
-    pin: "golden",
-    label: "Gold",
-    dotColor: "#E8C9A0", // apricot-gold (golden hour skyTop)
-    pinnedHour: 17,
-  },
-  {
-    pin: "dusk",
-    label: "Dusk",
-    dotColor: "#9A8A8E", // lavender-grey (dusk mid skyTop)
-    pinnedHour: 20,
-  },
-  {
-    pin: "nocturne",
-    label: "Night",
-    dotColor: "#1E2B33", // dark teal-ink (nocturne skyTop)
-    pinnedHour: 0,
-  },
+  { pin: "auto", label: "Auto", dotColor: "var(--text-color)", pinnedHour: -1 },
+  { pin: "dawn", label: "Dawn", dotColor: "#C9B8C4", pinnedHour: 6 },
+  { pin: "day", label: "Day", dotColor: "#87CEEB", pinnedHour: 12 },
+  { pin: "golden", label: "Gold", dotColor: "#E8C9A0", pinnedHour: 17 },
+  { pin: "dusk", label: "Dusk", dotColor: "#9A8A8E", pinnedHour: 20 },
+  { pin: "nocturne", label: "Night", dotColor: "#1E2B33", pinnedHour: 0 },
 ];
 
-// ---- Component props ----
+// ---- Helpers ----
+
+const isAuto = (pin: PalettePin) => pin === "auto";
+
+/** Current palette's dot color (with night inversion). */
+function currentDotColor(pinned: PalettePin): string {
+  if (pinned === "auto") return "transparent";
+  if (pinned === "nocturne") return "#D4D0C8"; // moon disc
+  return PILLS.find((p) => p.pin === pinned)?.dotColor ?? "#87CEEB";
+}
+
+/** Night dot in dropdown: invert when inactive so it shows on dark glass. */
+function dotColorForDropdown(pill: PillCfg, pinned: PalettePin): string {
+  if (pill.pin === "auto") return "transparent";
+  if (pill.pin === "nocturne" && pinned !== "nocturne") return "#87CEEB"; // invert
+  return pill.dotColor;
+}
+
+// ---- Auto glyph ----
+
+const AutoGlyph: FC<{ bright?: boolean }> = ({ bright }) => (
+  <svg
+    width="12"
+    height="12"
+    viewBox="0 0 12 12"
+    fill="none"
+    stroke="var(--text-color)"
+    strokeWidth="1.2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    style={{ opacity: bright ? 1 : 0.6 }}
+  >
+    <path d="M1 6a5 5 0 0 1 8.5-3.5M11 6a5 5 0 0 1-8.5 3.5" />
+    <polyline points="8,2 10.5,2 10.5,4.5" />
+  </svg>
+);
+
+// ---- Component ----
 
 interface PaletteSelectorProps {
   pinned: PalettePin;
   onPin: (pin: PalettePin) => void;
 }
 
-// ---- Component ----
-
 const PaletteSelector: FC<PaletteSelectorProps> = ({ pinned, onPin }) => {
-  const [hovered, setHovered] = useState<PalettePin | null>(null);
+  const [open, setOpen] = useState(false);
+  const [hoveredItem, setHoveredItem] = useState<PalettePin | null>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
 
-  const handleClick = useCallback(
+  // Attach click handler via ref to bypass any React event-system edge cases
+  useEffect(() => {
+    const btn = btnRef.current;
+    if (!btn) return;
+    const handler = (e: MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setOpen((o) => !o);
+    };
+    btn.addEventListener("click", handler);
+    return () => btn.removeEventListener("click", handler);
+  }, []);
+
+  // Click outside closes the dropdown
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  const handleSelect = useCallback(
     (pin: PalettePin) => {
       onPin(pin);
+      setOpen(false);
     },
     [onPin],
   );
 
-  // Resting opacity of the label
-  const labelOpacity = (pin: PalettePin): number => {
-    if (pinned === pin) return 1;
-    if (hovered === pin) return 0.75;
-    return 0.55;
-  };
-
-  // Dot scale: active pill gets 1.15×; hovered gets 1.08×
-  const dotScale = (pin: PalettePin): number => {
-    if (pinned === pin) return 1.15;
-    if (hovered === pin) return 1.08;
-    return 1;
-  };
-
-  // The Auto pill uses a circular-arrow glyph, not a colored dot
-  const isAuto = (pin: PalettePin): boolean => pin === "auto";
-
-  // Night dot inversion: when Night is inactive, the dot is #1E2B33 which
-  // disappears against the dark smoked glass at night. Invert to Day sky-blue.
-  // When Night IS active, show a pale moon-disc (#D4D0C8).
-  const isNightInactive = (pin: PalettePin): boolean =>
-    pin === "nocturne" && pinned !== "nocturne";
-
-  // Bar class — reuses the same card-glass tokens via CSS custom properties,
-  // with a smaller rounded-xl to signal it's a sub-card UI element.
-  const barClass =
-    "flex items-center gap-1.5 px-2 py-2 bg-gradient-to-b from-[var(--card-bg-start)] to-[var(--card-bg-end)]" +
-    " backdrop-blur-md border border-[var(--card-border)] rounded-xl" +
-    " shadow-[0_4px_16px_var(--card-shadow)] ring-1 ring-[var(--card-ring)]" +
-    " text-[var(--text-color)] transition-all duration-1000 ease-out";
+  // Button glass — matches card tokens
+  const btnGlass =
+    "bg-gradient-to-b from-[var(--card-bg-start)] to-[var(--card-bg-end)]" +
+    " backdrop-blur-md border border-[var(--card-border)]" +
+    " shadow-[0_2px_8px_var(--card-shadow)] ring-1 ring-[var(--card-ring)]" +
+    " transition-all duration-200 ease-out";
 
   return (
     <div
-      className={"fixed bottom-6 left-6 z-40 sm:bottom-6 sm:left-6 max-sm:bottom-4 max-sm:left-1/2 max-sm:-translate-x-1/2 " + barClass}
-      style={{ opacity: hovered ? 0.82 : 0.55 }}
-      onMouseEnter={() => setHovered(hovered)} // keep existing (any hover on bar)
-      onMouseLeave={() => setHovered(null)}
+      ref={wrapperRef}
+      className="fixed top-6 right-6 z-[60] max-sm:top-4 max-sm:right-4"
     >
-      {PILLS.map((pill) => (
-        <button
-          key={pill.pin}
-          type="button"
-          onClick={() => handleClick(pill.pin)}
-          onMouseEnter={() => setHovered(pill.pin)}
-          onMouseLeave={() => setHovered(null)}
-          aria-label={pill.label}
-          aria-pressed={pinned === pill.pin}
-          className="flex flex-col items-center justify-center gap-0.5 cursor-pointer
-                     w-[26px] sm:w-[30px] transition-transform duration-200 ease-out
-                     hover:scale-105 focus:outline-none focus-visible:ring-1
-                     focus-visible:ring-[var(--card-ring)] rounded-md"
-          style={{
-            transform: pinned === pill.pin ? "scale(1.04)" : undefined,
-          }}
+      {/* Dropdown panel */}
+      {open && (
+        <div
+          className={
+            "absolute top-full mt-2 right-0 w-[140px] p-1 rounded-xl" +
+            " animate-fade-down" +
+            " bg-gradient-to-b from-[var(--card-bg-start)] to-[var(--card-bg-end)]" +
+            " backdrop-blur-md border border-[var(--card-border)]" +
+            " shadow-[0_8px_24px_var(--card-shadow)] ring-1 ring-[var(--card-ring)]"
+          }
+          role="listbox"
+          aria-label="Color palette"
         >
-          {/* Dot or glyph */}
-          <span
-            className="block rounded-full transition-all duration-300 ease-out"
-            style={{
-              width: 8,
-              height: 8,
-              backgroundColor: isAuto(pill.pin)
-                ? "transparent"
-                : isNightInactive(pill.pin)
-                  ? "#87CEEB" // invert: Day blue visible against dark glass
-                  : pill.dotColor,
-              border:
-                pinned === pill.pin && !isAuto(pill.pin)
-                  ? "1px solid var(--card-ring)"
-                  : isAuto(pill.pin)
-                    ? "1px solid var(--text-color)"
-                    : isNightInactive(pill.pin)
-                      ? "1px solid rgba(135,206,235,0.5)"
-                      : "1px solid transparent",
-              transform: `scale(${dotScale(pill.pin)})`,
-              opacity: isAuto(pill.pin) ? 0.55 : 1,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: 8,
-              lineHeight: 1,
-              color: "var(--text-color)",
-            }}
-          >
-            {/* Auto glyph: ↻ (clockwise return arrow) */}
-            {isAuto(pill.pin) && (
-              <svg
-                width="10"
-                height="10"
-                viewBox="0 0 12 12"
-                fill="none"
-                stroke="var(--text-color)"
-                strokeWidth="1.2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                style={{ opacity: pinned === "auto" ? 1 : 0.55 }}
+          {PILLS.map((pill) => {
+            const active = pinned === pill.pin;
+            const hov = hoveredItem === pill.pin;
+            return (
+              <button
+                key={pill.pin}
+                type="button"
+                role="option"
+                aria-selected={active}
+                onClick={() => handleSelect(pill.pin)}
+                onMouseEnter={() => setHoveredItem(pill.pin)}
+                onMouseLeave={() => setHoveredItem(null)}
+                className={
+                  "flex items-center gap-2 w-full h-7 px-3 rounded-md" +
+                  " transition-all duration-150 ease-out cursor-pointer" +
+                  " focus:outline-none focus-visible:ring-1 focus-visible:ring-[var(--card-ring)]"
+                }
+                style={{
+                  opacity: active ? 1 : hov ? 0.9 : 0.6,
+                  backgroundColor: hov
+                    ? "rgba(255,255,255,0.04)"
+                    : "transparent",
+                }}
               >
-                <path d="M1 6a5 5 0 0 1 8.5-3.5M11 6a5 5 0 0 1-8.5 3.5" />
-                <polyline points="8,2 10.5,2 10.5,4.5" />
-              </svg>
-            )}
-          </span>
+                {/* Dot or glyph */}
+                <span
+                  className="block rounded-full shrink-0 transition-transform duration-200"
+                  style={{
+                    width: 8,
+                    height: 8,
+                    backgroundColor: isAuto(pill.pin)
+                      ? "transparent"
+                      : dotColorForDropdown(pill, pinned),
+                    border:
+                      isAuto(pill.pin)
+                        ? "1px solid var(--text-color)"
+                        : "1px solid transparent",
+                    transform: `scale(${active ? 1.15 : hov ? 1.08 : 1})`,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  {isAuto(pill.pin) && <AutoGlyph bright={active} />}
+                </span>
 
-          {/* Label */}
+                {/* Label */}
+                <span
+                  className="font-mono leading-none select-none"
+                  style={{ fontSize: 10, letterSpacing: "0.02em" }}
+                >
+                  {pill.label}
+                </span>
+
+                {/* Auto glyph right-aligned (visual hint) */}
+                {isAuto(pill.pin) && (
+                  <span className="ml-auto opacity-50">
+                    <AutoGlyph />
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Trigger button */}
+      <button
+        ref={btnRef}
+        type="button"
+        aria-label="Select palette"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        className={
+          "w-8 h-8 flex items-center justify-center rounded-lg cursor-pointer pointer-events-auto " + btnGlass
+        }
+      >
+        {pinned === "auto" ? (
+          <span className="pointer-events-none"><AutoGlyph bright /></span>
+        ) : (
           <span
-            className="font-mono leading-none select-none transition-opacity duration-200"
+            className="block rounded-full pointer-events-none"
             style={{
-              fontSize: 9,
-              opacity: labelOpacity(pill.pin),
-              letterSpacing: "0.02em",
+              width: 10,
+              height: 10,
+              backgroundColor: currentDotColor(pinned),
             }}
-          >
-            {pill.label}
-          </span>
-        </button>
-      ))}
+          />
+        )}
+      </button>
     </div>
   );
 };
@@ -204,12 +237,12 @@ const PaletteSelector: FC<PaletteSelectorProps> = ({ pinned, onPin }) => {
 
 export function usePalettePin(): [PalettePin, (pin: PalettePin) => void] {
   const [pinned, setPinned] = useState<PalettePin>(() => {
-    if (typeof window === "undefined") return "auto";
+    if (typeof window === "undefined") return "day";
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored && PILLS.some((p) => p.pin === stored)) {
       return stored as PalettePin;
     }
-    return "auto";
+    return "day";
   });
 
   useEffect(() => {
