@@ -5,12 +5,13 @@ const Header: FC = () => {
   const titleStyles = `
     font-mono
     rounded px-2 sm:px-3 py-1 sm:py-2
-    border-2 border-black
-    shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]
+    border-2
+    shadow-[3px_3px_0px_0px_var(--header-shadow)]
     sm:transition-all sm:duration-200
-    sm:hover:bg-black sm:hover:text-white
+    sm:hover:bg-[var(--header-border)] sm:hover:text-[var(--card-bg-start)]
     sm:active:shadow-none sm:active:translate-x-[3px] sm:active:translate-y-[3px]
     focus:outline-none focus:ring-2 focus:ring-gray-500
+    text-[var(--text-color)] border-[var(--header-border)]
   `;
 
   return (

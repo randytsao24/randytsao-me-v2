@@ -1,4 +1,5 @@
 import React, { FC, useEffect, useRef } from "react";
+import { Palette, DAY_PALETTE, getLocalHour, paletteForHour, KEYFRAMES } from "../lib/palette";
 
 interface Cloud {
   x: number;
@@ -7,6 +8,13 @@ interface Cloud {
   height: number;
   speed: number;
   opacity: number;
+}
+
+interface Star {
+  x: number;
+  y: number;
+  radius: number;
+  baseOpacity: number; // 0.04–0.12
 }
 
 interface Wave {
@@ -57,7 +65,43 @@ interface Geom {
   beachBottom: number; // LITERAL canvas CSS-pixel height — never a computed fraction
 }
 
-const ImpressionistBeach: FC = () => {
+interface ImpressionistBeachProps {
+  palette?: Palette;
+}
+
+const ImpressionistBeach: FC<ImpressionistBeachProps> = ({
+  palette: paletteProp,
+}) => {
+  // Hold the current palette in a ref so the rAF loop always reads the latest
+  // without needing to close over React state.
+  const paletteRef = useRef<Palette>(paletteProp ?? DAY_PALETTE);
+
+  // Sync prop → ref. When parent drives the palette (living-light mode),
+  // this is the only React re-render path; the rAF loop stays decoupled.
+  useEffect(() => {
+    if (paletteProp) {
+      paletteRef.current = paletteProp;
+    }
+  }, [paletteProp]);
+
+  // If no prop supplied, self-drive from local clock (backward-compat / standalone).
+  // This also covers the HMR case where the prop hasn't been wired yet.
+  useEffect(() => {
+    if (paletteProp) return; // parent drives it
+    let id: number;
+    const tick = () => {
+      paletteRef.current = paletteForHour(KEYFRAMES, getLocalHour());
+      // When self-driving with only day keyframes, palette is constant.
+      // Stop the interval early to save cycles.
+      if (KEYFRAMES.length <= 2) {
+        clearInterval(id);
+        return;
+      }
+    };
+    tick();
+    id = window.setInterval(tick, 500);
+    return () => clearInterval(id);
+  }, [paletteProp]);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -182,6 +226,15 @@ const ImpressionistBeach: FC = () => {
       opacity: 0.15 + Math.random() * 0.2,
     }));
 
+    // Stars: 25 faint stippled dots in the upper sky, only visible at night.
+    // Reuses the cloud-array thinking — generated once, drawn per-frame.
+    const stars: Star[] = Array.from({ length: 25 }, () => ({
+      x: Math.random() * cssW,
+      y: (CLOUD_Y_MIN + Math.random() * CLOUD_Y_RANGE * 0.8) * cssH,
+      radius: 0.6 + Math.random() * 1.2,
+      baseOpacity: 0.04 + Math.random() * 0.08,
+    }));
+
     const waves: Wave[] = [
       { amplitude: 4, frequency: 0.008, speed: 0.0006, phase: 0 },
       { amplitude: 3, frequency: 0.012, speed: 0.0008, phase: 1.5 },
@@ -192,45 +245,48 @@ const ImpressionistBeach: FC = () => {
 
     const drawSky = () => {
       const { W, horizonY } = geom;
+      const p = paletteRef.current;
       const grad = ctx.createLinearGradient(0, 0, 0, horizonY + 30);
-      grad.addColorStop(0, "#87CEEB");
-      grad.addColorStop(0.25, "#98D4D9");
-      grad.addColorStop(0.5, "#A3DBD8");
-      grad.addColorStop(0.75, "#9BC7C5");
-      grad.addColorStop(1, "#8BB5B4");
+      grad.addColorStop(0, p.skyTop);
+      grad.addColorStop(0.25, p.skyMid1);
+      grad.addColorStop(0.5, p.skyMid2);
+      grad.addColorStop(0.75, p.skyMid3);
+      grad.addColorStop(1, p.skyBottom);
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, W, horizonY + 30);
     };
 
     const drawSunGlow = () => {
       const { W, H, horizonY } = geom;
-      const sunX = W * 0.65;
-      const sunY = horizonY - 20;
+      const p = paletteRef.current;
+      const sunX = W * p.sunXFrac;
+      const sunY = horizonY - p.sunYOffset;
 
       const grad = ctx.createRadialGradient(sunX, sunY, 0, sunX, sunY, H * 0.6);
-      grad.addColorStop(0, "rgba(255, 245, 220, 0.25)");
-      grad.addColorStop(0.1, "rgba(255, 240, 210, 0.15)");
-      grad.addColorStop(0.3, "rgba(255, 230, 190, 0.06)");
-      grad.addColorStop(0.6, "rgba(220, 220, 200, 0.02)");
-      grad.addColorStop(1, "rgba(200, 200, 180, 0)");
+      grad.addColorStop(0, p.sunGlowInner);
+      grad.addColorStop(0.1, p.sunGlowMid);
+      grad.addColorStop(0.3, p.sunGlowOuter);
+      grad.addColorStop(0.6, p.sunGlowFar);
+      grad.addColorStop(1, p.sunGlowEdge);
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, W, H);
 
       ctx.save();
       ctx.shadowBlur = 60;
-      ctx.shadowColor = "rgba(255, 235, 190, 0.4)";
-      ctx.fillStyle = "rgba(255, 240, 210, 0.2)";
+      ctx.shadowColor = p.sunEllipseShadow;
+      ctx.fillStyle = p.sunEllipseFill;
       ctx.beginPath();
-      ctx.ellipse(sunX, sunY, 40, 18, 0, 0, Math.PI * 2);
+      ctx.ellipse(sunX, sunY, p.sunRadiusX, p.sunRadiusY, 0, 0, Math.PI * 2);
       ctx.fill();
       ctx.restore();
     };
 
     const drawCloud = (c: Cloud) => {
+      const p = paletteRef.current;
       ctx.save();
       ctx.shadowBlur = 30;
-      ctx.shadowColor = "rgba(255, 255, 255, 0.15)";
-      ctx.fillStyle = `rgba(255, 255, 255, ${c.opacity})`;
+      ctx.shadowColor = p.cloudShadow;
+      ctx.fillStyle = `rgba(${Math.round(p.cloudFillR)},${Math.round(p.cloudFillG)},${Math.round(p.cloudFillB)},${c.opacity})`;
 
       ctx.beginPath();
       ctx.ellipse(c.x, c.y, c.width / 2, c.height / 2, 0, 0, Math.PI * 2);
@@ -251,24 +307,60 @@ const ImpressionistBeach: FC = () => {
       ctx.restore();
     };
 
+    /**
+     * Stars — 25 faint stippled dots only visible at night.
+     * Opacity fades in from 21:00–22:00 and out from 04:00–05:00,
+     * with a small per-star sine wobble for organic variety.
+     */
+    const starVisibility = (hour: number): number => {
+      if (hour >= 22 || hour < 4) return 1.0;
+      if (hour >= 21 && hour < 22) return (hour - 21) / 1.0;
+      if (hour >= 4 && hour < 5) return 1.0 - (hour - 4) / 1.0;
+      return 0;
+    };
+
+    const drawStars = (time: number) => {
+      const hour = getLocalHour();
+      const vis = starVisibility(hour);
+      if (vis <= 0.001) return;
+
+      const p = paletteRef.current;
+      const starColor = `rgba(${Math.round(p.cloudFillR)},${Math.round(p.cloudFillG)},${Math.round(p.cloudFillB)},`;
+
+      for (const s of stars) {
+        const wobble = 0.85 + 0.15 * Math.sin(time * 0.0002 + s.x * 0.01);
+        const alpha = s.baseOpacity * vis * wobble;
+        if (alpha < 0.005) continue;
+
+        ctx.save();
+        ctx.fillStyle = starColor + alpha.toFixed(3) + ")";
+        ctx.shadowBlur = 3;
+        ctx.shadowColor = starColor + (alpha * 0.5).toFixed(3) + ")";
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+    };
+
     const drawSea = (time: number) => {
       const { W, skyBottom, seaBottom } = geom;
       const seaTop = skyBottom; // flush with sky bottom — no gap
-      // const seaBottom = seaBottom; // a few px past beach top (explicit overlap)
+      const p = paletteRef.current;
 
       ctx.save();
       ctx.shadowBlur = 0;
 
       const seaGrad = ctx.createLinearGradient(0, seaTop, 0, seaBottom);
-      seaGrad.addColorStop(0, "#7AADAD");
-      seaGrad.addColorStop(0.3, "#71A0A0");
-      seaGrad.addColorStop(0.6, "#6B9895");
-      seaGrad.addColorStop(1, "#689090");
+      seaGrad.addColorStop(0, p.seaTop);
+      seaGrad.addColorStop(0.3, p.seaMid1);
+      seaGrad.addColorStop(0.6, p.seaMid2);
+      seaGrad.addColorStop(1, p.seaBottom);
       ctx.fillStyle = seaGrad;
       ctx.fillRect(0, seaTop, W, seaBottom - seaTop);
 
       waves.forEach((w, i) => {
-        ctx.strokeStyle = `rgba(170, 210, 210, ${0.08 + i * 0.02})`;
+        ctx.strokeStyle = `rgba(${Math.round(p.waveStroke1R)},${Math.round(p.waveStroke1G)},${Math.round(p.waveStroke1B)},${(0.08 + i * 0.02).toFixed(3)})`;
         ctx.lineWidth = 1;
         ctx.beginPath();
         for (let x = 0; x <= W; x += 4) {
@@ -281,7 +373,7 @@ const ImpressionistBeach: FC = () => {
 
       for (const w of waves.slice(2)) {
         const i = waves.indexOf(w);
-        ctx.strokeStyle = `rgba(140, 190, 190, ${0.05 + i * 0.015})`;
+        ctx.strokeStyle = `rgba(${Math.round(p.waveStroke2R)},${Math.round(p.waveStroke2G)},${Math.round(p.waveStroke2B)},${(0.05 + i * 0.015).toFixed(3)})`;
         ctx.lineWidth = 15;
         ctx.lineCap = "round";
         ctx.beginPath();
@@ -299,12 +391,13 @@ const ImpressionistBeach: FC = () => {
     const drawFoamLine = (time: number) => {
       const { W, horizonY } = geom;
       const foamY = horizonY + 8;
+      const p = paletteRef.current;
 
       ctx.save();
       ctx.shadowBlur = 20;
-      ctx.shadowColor = "rgba(220, 240, 240, 0.12)";
+      ctx.shadowColor = p.foamShadow;
 
-      ctx.strokeStyle = "rgba(200, 230, 230, 0.12)";
+      ctx.strokeStyle = p.foamStroke1;
       ctx.lineWidth = 4;
       ctx.lineCap = "round";
       ctx.beginPath();
@@ -315,7 +408,7 @@ const ImpressionistBeach: FC = () => {
       }
       ctx.stroke();
 
-      ctx.strokeStyle = "rgba(240, 250, 250, 0.08)";
+      ctx.strokeStyle = p.foamStroke2;
       ctx.lineWidth = 12;
       ctx.beginPath();
       for (let x = 0; x <= W; x += 6) {
@@ -330,23 +423,22 @@ const ImpressionistBeach: FC = () => {
 
     const drawBeach = (time: number) => {
       const { W, H, seamY, wetStripBottom, beachBottom } = geom;
+      const p = paletteRef.current;
 
       // THIN wet strip at the seam (~3% of H). Cooler/darker tone as the wet
       // transition off the sea — a sliver, NOT the dominant beach color.
       const wetSand = ctx.createLinearGradient(0, seamY, 0, wetStripBottom);
-      wetSand.addColorStop(0, "#9E9688");
-      wetSand.addColorStop(1, "#B0A08A");
+      wetSand.addColorStop(0, p.wetSandTop);
+      wetSand.addColorStop(1, p.wetSandBottom);
       ctx.fillStyle = wetSand;
       ctx.fillRect(0, seamY, W, wetStripBottom - seamY);
 
       // WARM dry sand fills the ENTIRE rest down to the literal canvas bottom.
-      // This is the band that was previously zero-height; it is now the bulk of
-      // the beach. Height is derived (beachBottom - wetStripBottom), never literal.
       const drySand = ctx.createLinearGradient(0, wetStripBottom, 0, beachBottom);
-      drySand.addColorStop(0, "#C8B898");
-      drySand.addColorStop(0.3, "#D0C0A0");
-      drySand.addColorStop(0.7, "#D4C4A4");
-      drySand.addColorStop(1, "#D8C8A8");
+      drySand.addColorStop(0, p.drySandTop);
+      drySand.addColorStop(0.3, p.drySandMid1);
+      drySand.addColorStop(0.7, p.drySandMid2);
+      drySand.addColorStop(1, p.drySandBottom);
       ctx.fillStyle = drySand;
       ctx.fillRect(0, wetStripBottom, W, beachBottom - wetStripBottom);
 
@@ -355,10 +447,8 @@ const ImpressionistBeach: FC = () => {
       for (let i = 0; i < 4; i++) {
         const alpha = 0.08 - i * 0.015;
         if (alpha <= 0) continue;
-        // Re-anchored to the warm-sand region so the texture sits ON the warm
-        // sand (below the wet strip), not off-screen as before.
         const y = wetStripBottom + H * 0.02 + i * H * 0.03;
-        ctx.strokeStyle = `rgba(180, 170, 155, ${alpha})`;
+        ctx.strokeStyle = `rgba(${Math.round(p.sandTextureR)},${Math.round(p.sandTextureG)},${Math.round(p.sandTextureB)},${alpha.toFixed(3)})`;
         ctx.lineWidth = 1.5;
         ctx.beginPath();
         for (let x = 0; x <= W; x += 6) {
@@ -403,6 +493,8 @@ const ImpressionistBeach: FC = () => {
       const cols = lastWet.length;
       const maxReachAbs = 0.06 * H; // hard clamp: leading edge never passes 0.86H
       const coverThresh = 0.004 * H; // below this depth a column doesn't count as wet
+
+      const p = paletteRef.current;
 
       // One global advance/recede cycle (~11s). The water sheet rises and falls
       // as a single unit — no more distinct blobs breaking apart.
@@ -457,7 +549,7 @@ const ImpressionistBeach: FC = () => {
       // wetReach is 0 the path sits at seamY (zero-height fill there), so the
       // shape naturally tapers off at the drying edges.
       const dampAlpha = washCfg.dampPeak;
-      ctx.fillStyle = `rgba(120, 92, 58, ${dampAlpha.toFixed(3)})`;
+      ctx.fillStyle = `rgba(${Math.round(p.washDampR)},${Math.round(p.washDampG)},${Math.round(p.washDampB)},${dampAlpha.toFixed(3)})`;
       ctx.beginPath();
       ctx.moveTo(0, seamY);
       for (let col = 0; col < cols; col++) {
@@ -482,9 +574,9 @@ const ImpressionistBeach: FC = () => {
       // is the fix for "a wire moving up and down" — it's a connected sheet now.
       const m = washCfg.waterAlpha; // master multiplier
       const bodyGrad = ctx.createLinearGradient(0, seamY, 0, seamY + maxReachAbs);
-      bodyGrad.addColorStop(0, `rgba(108, 146, 144, ${(0.5 * m).toFixed(3)})`); // at sea edge
-      bodyGrad.addColorStop(0.5, `rgba(126, 164, 159, ${(0.34 * m).toFixed(3)})`);
-      bodyGrad.addColorStop(1, `rgba(150, 184, 178, ${(0.14 * m).toFixed(3)})`); // thin frontier
+      bodyGrad.addColorStop(0, `rgba(${Math.round(p.washBodyTopR)},${Math.round(p.washBodyTopG)},${Math.round(p.washBodyTopB)},${(0.5 * m).toFixed(3)})`);
+      bodyGrad.addColorStop(0.5, `rgba(${Math.round(p.washBodyMidR)},${Math.round(p.washBodyMidG)},${Math.round(p.washBodyMidB)},${(0.34 * m).toFixed(3)})`);
+      bodyGrad.addColorStop(1, `rgba(${Math.round(p.washBodyBottomR)},${Math.round(p.washBodyBottomG)},${Math.round(p.washBodyBottomB)},${(0.14 * m).toFixed(3)})`);
       ctx.shadowBlur = 0;
       ctx.fillStyle = bodyGrad;
       ctx.beginPath();
@@ -500,8 +592,8 @@ const ImpressionistBeach: FC = () => {
       // 3. Foam lip — a soft warm off-white line riding the leading edge,
       // continuous across the full width since the water sheet never breaks.
       ctx.shadowBlur = 12;
-      ctx.shadowColor = "rgba(242, 239, 230, 0.3)";
-      ctx.strokeStyle = `rgba(242, 239, 230, ${washCfg.foamPeak.toFixed(3)})`;
+      ctx.shadowColor = p.washFoamShadow;
+      ctx.strokeStyle = `rgba(${Math.round(p.washFoamR)},${Math.round(p.washFoamG)},${Math.round(p.washFoamB)},${washCfg.foamPeak.toFixed(3)})`;
       ctx.lineWidth = 2.5;
       ctx.lineCap = "round";
       ctx.lineJoin = "round";
@@ -525,6 +617,7 @@ const ImpressionistBeach: FC = () => {
         drawCloud(c);
       }
 
+      drawStars(time);
       drawSunGlow();
       drawSea(time);
       drawFoamLine(time);
