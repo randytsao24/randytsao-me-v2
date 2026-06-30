@@ -388,6 +388,74 @@ const ImpressionistBeach: FC<ImpressionistBeachProps> = ({
       ctx.restore();
     };
 
+    /**
+     * Moon reflection — a soft vertical column of cool silver light on the sea,
+     * only visible at night. The radial gradient is centered at the moon's
+     * horizon position and stretches across the sea and beach, fading naturally
+     * with distance. A second narrower pass adds a sharper shimmer column.
+     */
+    const drawMoonReflection = () => {
+      const hour = getLocalHour();
+      if (hour >= 5 && hour < 21) return; // daytime — no moon reflection
+
+      const { W, H, skyBottom, seaBottom } = geom;
+      const p = paletteRef.current;
+      const reflX = W * p.sunXFrac;
+      const reflY = skyBottom; // at the horizon line
+
+      // Broad ambient reflection — washes cool light across the sea
+      ctx.save();
+      const broadGrad = ctx.createRadialGradient(reflX, reflY, 0, reflX, reflY, H * 0.55);
+      broadGrad.addColorStop(0, "rgba(210,220,228,0.13)");
+      broadGrad.addColorStop(0.2, "rgba(200,212,222,0.07)");
+      broadGrad.addColorStop(0.5, "rgba(180,195,208,0.03)");
+      broadGrad.addColorStop(1, "rgba(160,175,190,0)");
+      ctx.fillStyle = broadGrad;
+      ctx.fillRect(0, skyBottom, W, H - skyBottom); // sea + beach
+      ctx.restore();
+
+      // Narrow shimmer column — the "moonbeam" directly below the moon
+      ctx.save();
+      const shimmerGrad = ctx.createLinearGradient(0, skyBottom, 0, skyBottom + H * 0.25);
+      shimmerGrad.addColorStop(0, "rgba(225,232,235,0.18)");
+      shimmerGrad.addColorStop(0.3, "rgba(215,225,230,0.08)");
+      shimmerGrad.addColorStop(0.7, "rgba(200,210,218,0.02)");
+      shimmerGrad.addColorStop(1, "rgba(180,195,205,0)");
+      ctx.fillStyle = shimmerGrad;
+
+      // Draw the shimmer as a tall rounded trapezoid, wider at the horizon
+      // and narrowing as it descends — mimics perspective on the water.
+      const shimmerWidth = W * 0.06; // half-width at horizon
+      const bottomWidth = W * 0.02;
+      ctx.beginPath();
+      ctx.moveTo(reflX - shimmerWidth, skyBottom);
+      ctx.lineTo(reflX + shimmerWidth, skyBottom);
+      ctx.lineTo(reflX + bottomWidth, skyBottom + H * 0.25);
+      ctx.lineTo(reflX - bottomWidth, skyBottom + H * 0.25);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+
+      // Subtle fragmented shimmer lines — a few horizontal dashes across the
+      // reflection column at staggered depths for a "light on ripples" feel.
+      ctx.save();
+      ctx.strokeStyle = "rgba(225,235,238,0.08)";
+      ctx.lineWidth = 1;
+      for (let i = 0; i < 8; i++) {
+        const depth = skyBottom + 12 + i * (H * 0.025);
+        const halfW = shimmerWidth * (1 - (depth - skyBottom) / (H * 0.25)) * 0.7;
+        if (halfW < 3) continue;
+        ctx.beginPath();
+        for (let x = reflX - halfW; x <= reflX + halfW; x += halfW * 0.4) {
+          const segLen = 3 + Math.random() * halfW * 0.5;
+          ctx.moveTo(x, depth);
+          ctx.lineTo(x + segLen, depth + Math.sin(x * 0.3) * 0.8);
+        }
+        ctx.stroke();
+      }
+      ctx.restore();
+    };
+
     const drawFoamLine = (time: number) => {
       const { W, horizonY } = geom;
       const foamY = horizonY + 8;
@@ -620,6 +688,7 @@ const ImpressionistBeach: FC<ImpressionistBeachProps> = ({
       drawStars(time);
       drawSunGlow();
       drawSea(time);
+      drawMoonReflection();
       drawFoamLine(time);
       drawBeach(time);
       drawShoreWash(time, animated); // AFTER the beach; skipped on the static frame
