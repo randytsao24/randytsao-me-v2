@@ -51,7 +51,7 @@ const PILLS: PillCfg[] = [
     pin: "dusk",
     label: "Dusk",
     dotColor: "#9A8A8E", // lavender-grey (dusk mid skyTop)
-    pinnedHour: 19.5,
+    pinnedHour: 20,
   },
   {
     pin: "nocturne",

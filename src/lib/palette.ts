@@ -890,6 +890,24 @@ const CARD_KEYFRAMES: CardKeyframe[] = [
     },
   },
   {
+    // Bridge keyframe: text flips to light at 19.3 so the 19→20 lerp never
+    // produces mid-grey text on mid-grey background (the contrast dead zone).
+    hour: 19.3,
+    tokens: {
+      bgStart: "rgba(135,130,126,0.57)",
+      bgEnd: "rgba(118,112,108,0.47)",
+      border: "rgba(180,175,168,0.22)",
+      shadow: "rgba(30,35,40,0.26)",
+      ring: "rgba(110,105,100,0.045)",
+      textColor: "#B0ACA8",
+      linkColor: "#4A8A88",
+      linkHoverColor: "#6AAAA8",
+      headerBorder: "#B0ACA8",
+      headerShadow: "rgba(120,115,110,0.4)",
+      grainOpacity: 0.06,
+    },
+  },
+  {
     hour: 20,
     tokens: {
       bgStart: "rgba(70,68,72,0.62)",
