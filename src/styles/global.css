@@ -3,19 +3,20 @@
 @tailwind utilities;
 
 /* Static CSS gradient fallback — shows before the canvas hydrates and if
-   JavaScript fails. Approximates the beach scene: sky → sea → sand. */
+   JavaScript fails. A neutral dusk-like gradient that won't clash violently
+   at any time of day (day visitors get a warm tone; night visitors get dark). */
 html {
   background: linear-gradient(
     180deg,
-    #87CEEB 0%,
-    #98D4D9 15%,
-    #A3DBD8 30%,
-    #9BC7C5 45%,
-    #8BB5B4 60%,
-    #7AADAD 70%,
-    #6B9895 80%,
-    #C8B898 85%,
-    #D8C8A8 100%
+    #3A4A50 0%,
+    #3E4E54 15%,
+    #425258 30%,
+    #3E4E54 45%,
+    #384850 60%,
+    #304048 70%,
+    #283840 80%,
+    #4A4540 85%,
+    #5A5550 100%
   );
   min-height: 100vh;
 }
@@ -23,13 +24,32 @@ html {
 /* Faint SVG-noise grain overlay for cards.
    Painted via ::before so it sits above the card fill but below the
    card's text content (which carries `relative z-10`). pointer-events:none
-   keeps links/selection working. Kept whisper-faint at 4% opacity. */
+   keeps links/selection working.
+   Opacity driven by --grain-opacity CSS custom property so grain remains
+   visible on dark cards at night (defaults to 0.04 for day, 0.08–0.10 for nocturne). */
 .card-grain::before {
   content: "";
   position: absolute;
   inset: 0;
   border-radius: 1rem; /* matches rounded-2xl */
   pointer-events: none;
-  opacity: 0.04;
+  opacity: var(--grain-opacity, 0.04);
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='cardGrain'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23cardGrain)'/%3E%3C/svg%3E");
+}
+
+/* Dropdown animations for the palette selector */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-up {
+  animation: fade-up 150ms ease-out;
+}
+
+@keyframes fade-down {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-down {
+  animation: fade-down 150ms ease-out;
 }
